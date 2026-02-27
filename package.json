@@ -1,0 +1,11 @@
+{
+  "name": "domain-ate",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

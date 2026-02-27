@@ -276,44 +276,90 @@
       display: block;
     }
 
-    .messages {
+    /* Single animated status message — replaces old scrolling list */
+    .status-message {
+      display: flex;
+      align-items: center;
+      gap: 18px;
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 24px;
+      padding: 24px 28px;
       margin-bottom: 24px;
-      max-height: 400px;
-      overflow-y: auto;
+      min-height: 80px;
+      opacity: 0;
     }
 
-    .message {
-      display: flex;
-      gap: 12px;
-      padding: 16px;
-      border-radius: 12px;
-      margin-bottom: 12px;
-      background: rgba(15, 22, 36, 0.5);
-      border: 1px solid var(--border);
+    .status-message.status-visible {
+      animation: statusIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    .message.acknowledgment {
-      background: rgba(16, 185, 129, 0.1);
+    @keyframes statusIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .status-message.acknowledgment {
+      background: rgba(16, 185, 129, 0.08);
       border-color: rgba(16, 185, 129, 0.3);
     }
 
-    .message-emoji {
-      font-size: 24px;
+    .status-indicator {
       flex-shrink: 0;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .message-content {
+    /* 3-dot typing indicator */
+    .thinking-dots {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .thinking-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: dotPulse 1.3s ease-in-out infinite;
+    }
+
+    .thinking-dots span:nth-child(1) { animation-delay: 0s; }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.18s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.36s; }
+
+    @keyframes dotPulse {
+      0%, 80%, 100% { transform: scale(0.55); opacity: 0.3; }
+      40%           { transform: scale(1);    opacity: 1; }
+    }
+
+    /* Check circle for acknowledgment steps */
+    .check-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.15);
+      border: 2px solid rgba(16, 185, 129, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6ee7b7;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .status-content {
       flex: 1;
       color: var(--text-secondary);
       font-family: 'DM Mono', monospace;
-      font-size: 14px;
+      font-size: 15px;
+      line-height: 1.5;
     }
 
-    .message.acknowledgment .message-content {
+    .status-message.acknowledgment .status-content {
       color: #6ee7b7;
       font-weight: 600;
     }
@@ -598,6 +644,136 @@
       display: none;
     }
 
+    /* ── Results Stage ──────────────────────────────────────── */
+    .results-container {
+      display: none;
+    }
+    .results-container.active {
+      display: block;
+    }
+
+    .results-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .results-header h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .results-header p {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .domains-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .domain-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      transition: all 0.25s;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .domain-card:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+    }
+
+    .domain-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+    .domain-name .tld {
+      color: var(--accent-light);
+    }
+
+    .domain-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .style-badge.brandable  { background: rgba(99,102,241,0.15); color: #a78bfa; border: 1px solid rgba(99,102,241,0.3); }
+    .style-badge.keyword    { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .style-badge.hybrid     { background: rgba(236,72,153,0.15); color: #f472b6; border: 1px solid rgba(236,72,153,0.3); }
+
+    .avail-badge.checking   { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+    .avail-badge.available  { background: rgba(16,185,129,0.15);  color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+    .avail-badge.taken      { background: rgba(239,68,68,0.15);   color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+    .avail-badge.unknown    { background: rgba(100,116,139,0.1);  color: #64748b; border: 1px solid rgba(100,116,139,0.2); }
+
+    .domain-rationale {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .register-link {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-light);
+      text-decoration: none;
+      padding: 6px 0;
+      transition: color 0.2s;
+      font-family: 'DM Mono', monospace;
+    }
+    .register-link:hover { color: #fff; }
+    .register-link.hidden-link { display: none; }
+
+    .start-over-btn {
+      width: 100%;
+      padding: 16px;
+      background: transparent;
+      border: 2px solid var(--border-bright);
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .start-over-btn:hover {
+      background: rgba(99,102,241,0.1);
+      color: var(--text-primary);
+    }
+
+    .results-error {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+    }
+    .results-error p { margin-bottom: 16px; }
+
     @media (max-width: 768px) {
       .hero h1 { font-size: 40px; }
       .hero-subtitle { font-size: 18px; }
@@ -607,6 +783,7 @@
       .comparison-grid { grid-template-columns: 1fr; }
       .trust-signals { gap: 20px; }
       .options { grid-template-columns: 1fr; }
+      .domains-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -678,7 +855,10 @@
             <h2 class="cta-heading">AI Thinking Process</h2>
             <p class="cta-subheading mono" id="businessDesc"></p>
 
-            <div class="messages" id="messages"></div>
+            <div class="status-message" id="statusMessage">
+              <div class="status-indicator" id="statusIndicator"></div>
+              <div class="status-content" id="statusContent"></div>
+            </div>
 
             <div id="questionContainer"></div>
 
@@ -686,6 +866,21 @@
               <div class="progress-fill" id="progressFill" style="width: 0%"></div>
             </div>
             <p class="progress-text"><span id="progressText">0</span>% complete</p>
+          </div>
+        </div>
+
+        <div id="resultsStage" class="results-container">
+          <div class="input-wrapper">
+            <div class="results-header">
+              <h2>Your Domain Suggestions</h2>
+              <p id="resultsSubheading">10 personalized recommendations, availability checked</p>
+            </div>
+
+            <div id="domainsGrid" class="domains-grid"></div>
+
+            <button class="start-over-btn" onclick="resetDemo()">
+              ↩ Start Over with a New Idea
+            </button>
           </div>
         </div>
       </div>
@@ -847,7 +1042,6 @@
     // Interactive Demo Logic
     let currentQuestion = null;
     let answers = {};
-    let messages = [];
     let progress = 0;
     let questionTimer = null;
 
@@ -855,20 +1049,24 @@
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    function addMessage(type, emoji, content) {
-      messages.push({ type, emoji, content });
-      renderMessages();
-    }
+    function addMessage(type, _emoji, content) {
+      const el          = document.getElementById('statusMessage');
+      const indicatorEl = document.getElementById('statusIndicator');
+      const contentEl   = document.getElementById('statusContent');
 
-    function renderMessages() {
-      const container = document.getElementById('messages');
-      container.innerHTML = messages.map(msg => `
-        <div class="message ${msg.type === 'acknowledgment' ? 'acknowledgment' : ''}">
-          <div class="message-emoji">${msg.emoji}</div>
-          <div class="message-content">${msg.content}</div>
-        </div>
-      `).join('');
-      container.scrollTop = container.scrollHeight;
+      // Reset animation
+      el.classList.remove('status-visible', 'acknowledgment');
+      void el.offsetWidth;
+
+      if (type === 'acknowledgment') {
+        indicatorEl.innerHTML = '<div class="check-circle">✓</div>';
+        el.classList.add('acknowledgment');
+      } else {
+        indicatorEl.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div>';
+      }
+
+      contentEl.textContent = content;
+      el.classList.add('status-visible');
     }
 
     function updateProgress(value) {
@@ -1037,24 +1235,162 @@
       addMessage('acknowledgment', '✓', `Got it! Targeting ${labels[answer]}...`);
       updateProgress(70);
 
-      await wait(1500);
+      await wait(800);
       addMessage('thinking', '🎯', 'Generating your personalized suggestions...');
-      updateProgress(80);
+      updateProgress(78);
 
-      await wait(2000);
-      addMessage('thinking', '📝', 'Created 15 creative options!');
+      // Fire real API call in parallel with the thinking animation
+      const description = document.getElementById('businessDescription').value;
+      const suggestPromise = fetchSuggestions(description, answers);
+
+      await wait(1800);
+      addMessage('thinking', '✨', 'Brainstorming creative combinations...');
+      updateProgress(85);
+
+      // Await the suggestion results
+      let suggestions;
+      try {
+        suggestions = await suggestPromise;
+      } catch (err) {
+        console.error('Suggestion fetch failed:', err);
+        addMessage('thinking', '⚠️', 'Could not reach AI. Check your connection and try again.');
+        updateProgress(100);
+        await wait(1000);
+        showResultsError('AI suggestions are unavailable right now. Please try again in a moment.');
+        return;
+      }
+
+      addMessage('thinking', '📝', `Generated ${suggestions.length} creative options!`);
       updateProgress(90);
 
-      await wait(1500);
+      await wait(800);
       addMessage('thinking', '🔍', 'Checking domain availability across TLDs...');
-      updateProgress(95);
+      updateProgress(93);
 
-      await wait(2000);
-      addMessage('acknowledgment', '🎉', '✨ Your domains are ready!');
+      // Check availability in parallel for all suggestions
+      const domainList = suggestions.map(s => s.name + s.tld);
+      const availability = await checkDomainAvailability(domainList);
+
       updateProgress(100);
+      addMessage('acknowledgment', '🎉', '✨ Your domains are ready!');
 
-      await wait(1500);
-      addMessage('thinking', '🎁', 'This is just a demo. The real app will show your personalized domain results here!');
+      await wait(800);
+      showResults(suggestions, availability);
+    }
+
+    // ── API helpers ────────────────────────────────────────────────────────────
+
+    async function fetchSuggestions(description, answersObj) {
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description, answers: answersObj }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      return data.suggestions;
+    }
+
+    async function checkDomainAvailability(domains) {
+      try {
+        const res = await fetch('/api/check-domains', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domains }),
+        });
+        if (!res.ok) return {};
+        const data = await res.json();
+        return data.results || {};
+      } catch {
+        return {};
+      }
+    }
+
+    // ── Render results ─────────────────────────────────────────────────────────
+
+    function showResults(suggestions, availability) {
+      document.getElementById('thinkingStage').classList.remove('active');
+
+      const grid = document.getElementById('domainsGrid');
+      grid.innerHTML = suggestions.map(s => {
+        const fullDomain = s.name + s.tld;
+        const avail = availability[fullDomain];
+        let availClass, availLabel;
+        if (avail === true)       { availClass = 'available'; availLabel = '✓ Available'; }
+        else if (avail === false) { availClass = 'taken';     availLabel = '✗ Taken'; }
+        else                      { availClass = 'unknown';   availLabel = '? Unknown'; }
+
+        const registerUrl = `https://www.namecheap.com/domains/registration/results/?domain=${encodeURIComponent(fullDomain)}`;
+
+        return `
+          <div class="domain-card">
+            <div class="domain-name">${escapeHtml(s.name)}<span class="tld">${escapeHtml(s.tld)}</span></div>
+            <div class="domain-badges">
+              <span class="badge style-badge ${s.style}">${capitalise(s.style)}</span>
+              <span class="badge avail-badge ${availClass}">${availLabel}</span>
+            </div>
+            <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
+            ${avail !== false
+              ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">Register on Namecheap →</a>`
+              : ''}
+          </div>
+        `;
+      }).join('');
+
+      const resultsEl = document.getElementById('resultsStage');
+      resultsEl.classList.add('active');
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function showResultsError(message) {
+      document.getElementById('thinkingStage').classList.remove('active');
+
+      const grid = document.getElementById('domainsGrid');
+      grid.innerHTML = `
+        <div class="results-error" style="grid-column: 1 / -1;">
+          <p>⚠️ ${escapeHtml(message)}</p>
+        </div>
+      `;
+
+      const resultsEl = document.getElementById('resultsStage');
+      resultsEl.classList.add('active');
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function resetDemo() {
+      document.getElementById('resultsStage').classList.remove('active');
+      document.getElementById('thinkingStage').classList.remove('active');
+      document.getElementById('inputStage').classList.remove('hidden');
+      // Reset the single status message
+      const el = document.getElementById('statusMessage');
+      el.classList.remove('status-visible', 'acknowledgment');
+      document.getElementById('statusIndicator').innerHTML = '';
+      document.getElementById('statusContent').textContent = '';
+      document.getElementById('questionContainer').innerHTML = '';
+      document.getElementById('domainsGrid').innerHTML = '';
+      updateProgress(0);
+      answers = {};
+      currentQuestion = null;
+      if (questionTimer) clearInterval(questionTimer);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── Utilities ──────────────────────────────────────────────────────────────
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function capitalise(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
     }
   </script>
 </body>
