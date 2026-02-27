@@ -1,11 +1,5 @@
 export const config = { maxDuration: 30 };
 
-import Anthropic from '@anthropic-ai/sdk';
-
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -66,14 +60,32 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
   }
 ]`;
 
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  console.log('API key present:', !!apiKey, '| starts with:', apiKey?.slice(0, 14));
+
   try {
-    const message = await client.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      }),
     });
 
-    const rawText = message.content[0].text.trim();
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Anthropic API error:', response.status, JSON.stringify(data));
+      throw new Error(`Anthropic API returned ${response.status}`);
+    }
+
+    const rawText = data.content[0].text.trim();
 
     let suggestions;
     try {
