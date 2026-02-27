@@ -60,19 +60,15 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
   }
 ]`;
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  console.log('API key present:', !!apiKey, '| starts with:', apiKey?.slice(0, 14));
-
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
+        model: 'gpt-4o-mini',
         max_tokens: 1024,
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -81,11 +77,11 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Anthropic API error:', response.status, JSON.stringify(data));
-      throw new Error(`Anthropic API returned ${response.status}`);
+      console.error('OpenAI API error:', response.status, JSON.stringify(data));
+      throw new Error(`OpenAI API returned ${response.status}`);
     }
 
-    const rawText = data.content[0].text.trim();
+    const rawText = data.choices[0].message.content.trim();
 
     let suggestions;
     try {
@@ -95,12 +91,12 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
       if (match) {
         suggestions = JSON.parse(match[0]);
       } else {
-        throw new Error('Could not parse Claude response as JSON');
+        throw new Error('Could not parse AI response as JSON');
       }
     }
 
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
-      throw new Error('Invalid suggestions format from Claude');
+      throw new Error('Invalid suggestions format from AI');
     }
 
     suggestions = suggestions.slice(0, 10).map(s => ({
