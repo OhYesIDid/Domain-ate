@@ -68,7 +68,7 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
 
   try {
     const message = await client.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-3-5-haiku-latest',
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }],
     });
