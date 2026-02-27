@@ -61,14 +61,15 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
 ]`;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -77,11 +78,11 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('OpenAI API error:', response.status, JSON.stringify(data));
-      throw new Error(`OpenAI API returned ${response.status}`);
+      console.error('Anthropic API error:', response.status, JSON.stringify(data));
+      throw new Error(`Anthropic API returned ${response.status}`);
     }
 
-    const rawText = data.choices[0].message.content.trim();
+    const rawText = data.content[0].text.trim();
 
     let suggestions;
     try {
@@ -91,12 +92,12 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
       if (match) {
         suggestions = JSON.parse(match[0]);
       } else {
-        throw new Error('Could not parse AI response as JSON');
+        throw new Error('Could not parse Claude response as JSON');
       }
     }
 
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
-      throw new Error('Invalid suggestions format from AI');
+      throw new Error('Invalid suggestions format from Claude');
     }
 
     suggestions = suggestions.slice(0, 10).map(s => ({
