@@ -1,39 +1,136 @@
+import { createPublicKey, verify } from 'crypto';
+
 export const config = { maxDuration: 30 };
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+const FREE_LIMIT = 5;
+
+// ── Clerk JWT verification ──────────────────────────────────────────────────
+
+let cachedJwks = null;
+let jwksCachedAt = 0;
+
+async function getClerkJwks() {
+  const now = Date.now();
+  if (cachedJwks && now - jwksCachedAt < 3_600_000) return cachedJwks;
+  const res = await fetch(
+    `https://${process.env.CLERK_FRONTEND_API}/.well-known/jwks.json`
+  );
+  cachedJwks = await res.json();
+  jwksCachedAt = now;
+  return cachedJwks;
+}
+
+async function verifyClerkToken(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString());
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+    if (payload.exp * 1000 < Date.now()) return null;
+
+    const jwks = await getClerkJwks();
+    const jwk  = jwks.keys.find(k => k.kid === header.kid);
+    if (!jwk) return null;
+
+    const publicKey = createPublicKey({ key: jwk, format: 'jwk' });
+    const valid = verify(
+      'RSA-SHA256',
+      Buffer.from(`${parts[0]}.${parts[1]}`),
+      publicKey,
+      Buffer.from(parts[2], 'base64url')
+    );
+    if (!valid) return null;
+    return payload; // { sub: userId, metadata: { plan } ... }
+  } catch {
+    return null;
   }
+}
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+// ── Upstash Redis helpers ───────────────────────────────────────────────────
 
+function usageKey(userId) {
+  const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+  return `usage:${userId}:${month}`;
+}
+
+async function getUsage(userId) {
+  const res = await fetch(
+    `${process.env.UPSTASH_REDIS_REST_URL}/get/${usageKey(userId)}`,
+    { headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` } }
+  );
+  const data = await res.json();
+  return parseInt(data.result || '0', 10);
+}
+
+async function incrementUsage(userId) {
+  const key = usageKey(userId);
+  await fetch(
+    `${process.env.UPSTASH_REDIS_REST_URL}/incr/${key}`,
+    { headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` } }
+  );
+  // Auto-expire after ~35 days so keys clean themselves up
+  await fetch(
+    `${process.env.UPSTASH_REDIS_REST_URL}/expire/${key}/3024000`,
+    { headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` } }
+  );
+}
+
+// ── Main handler ────────────────────────────────────────────────────────────
+
+export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     return res.status(200).end();
   }
 
-  const { description, answers } = req.body;
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // ── Auth check ──────────────────────────────────────────────────────────
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  if (!token) return res.status(401).json({ error: 'Sign in to generate domain suggestions.' });
+
+  const payload = await verifyClerkToken(token);
+  if (!payload) return res.status(401).json({ error: 'Invalid or expired session. Please sign in again.' });
+
+  const userId = payload.sub;
+  const plan   = payload.metadata?.plan || payload.publicMetadata?.plan || 'free';
+
+  // ── Usage check (free plan only) ────────────────────────────────────────
+  if (plan !== 'pro') {
+    const usage = await getUsage(userId);
+    if (usage >= FREE_LIMIT) {
+      return res.status(402).json({
+        error: `You've used all ${FREE_LIMIT} free consultations this month. Upgrade to Pro for unlimited access.`,
+        usage,
+        limit: FREE_LIMIT,
+      });
+    }
+  }
+
+  // ── Build prompt ────────────────────────────────────────────────────────
+  const { description, answers } = req.body;
   if (!description || typeof description !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid description' });
   }
 
-  const geo = answers?.geo || 'global';
+  const geo      = answers?.geo      || 'global';
   const audience = answers?.audience || 'both';
 
   const geoLabel = {
-    global: 'a global audience',
-    us: 'the United States market',
-    europe: 'the European market',
-    asia: 'the Asia-Pacific market',
+    global: 'a global audience', us: 'the United States market',
+    europe: 'the European market', asia: 'the Asia-Pacific market',
   }[geo] || 'a global audience';
 
   const audienceLabel = {
-    b2b: 'businesses (B2B)',
-    b2c: 'consumers (B2C)',
-    genz: 'Gen Z / young consumers',
-    both: 'a mixed audience',
+    b2b: 'businesses (B2B)', b2c: 'consumers (B2C)',
+    genz: 'Gen Z / young consumers', both: 'a mixed audience',
   }[audience] || 'a mixed audience';
 
   const prompt = `You are a world-class domain name consultant. Generate exactly 10 creative domain name suggestions for the following business.
@@ -60,6 +157,7 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
   }
 ]`;
 
+  // ── Call Anthropic ──────────────────────────────────────────────────────
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -76,24 +174,19 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
     });
 
     const data = await response.json();
-
     if (!response.ok) {
       console.error('Anthropic API error:', response.status, JSON.stringify(data));
       throw new Error(`Anthropic API returned ${response.status}`);
     }
 
     const rawText = data.content[0].text.trim();
-
     let suggestions;
     try {
       suggestions = JSON.parse(rawText);
     } catch {
       const match = rawText.match(/\[[\s\S]*\]/);
-      if (match) {
-        suggestions = JSON.parse(match[0]);
-      } else {
-        throw new Error('Could not parse Claude response as JSON');
-      }
+      if (match) suggestions = JSON.parse(match[0]);
+      else throw new Error('Could not parse Claude response as JSON');
     }
 
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
@@ -101,11 +194,18 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
     }
 
     suggestions = suggestions.slice(0, 10).map(s => ({
-      name: String(s.name || '').toLowerCase().trim(),
-      tld: String(s.tld || '.com').trim(),
+      name:      String(s.name      || '').toLowerCase().trim(),
+      tld:       String(s.tld       || '.com').trim(),
       rationale: String(s.rationale || '').trim(),
-      style: ['brandable', 'keyword', 'hybrid'].includes(s.style) ? s.style : 'brandable',
+      style:     ['brandable', 'keyword', 'hybrid'].includes(s.style) ? s.style : 'brandable',
     }));
+
+    // ── Increment usage (after successful generation) ──────────────────
+    if (plan !== 'pro') {
+      await incrementUsage(userId).catch(err =>
+        console.warn('Usage increment failed (non-fatal):', err.message)
+      );
+    }
 
     return res.status(200).json({ suggestions });
   } catch (error) {

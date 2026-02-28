@@ -19,7 +19,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-  
+
+  <!-- Clerk Auth -->
+  <script>window.__clerk_publishable_key = 'REPLACE_WITH_YOUR_CLERK_PUBLISHABLE_KEY';</script>
+  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
+
   <style>
     * {
       margin: 0;
@@ -872,6 +876,119 @@
       color: var(--text-primary);
     }
 
+    /* ── Auth Gate ───────────────────────────────────────── */
+    .auth-gate {
+      display: none;
+    }
+    .auth-gate.active {
+      display: block;
+    }
+    .auth-gate-icon {
+      font-size: 52px;
+      margin-bottom: 16px;
+      line-height: 1;
+    }
+    .auth-gate-note {
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 20px;
+    }
+
+    /* Override Clerk component to match dark theme */
+    #clerk-auth-container .cl-rootBox { width: 100%; }
+    #clerk-auth-container .cl-card {
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+
+    /* ── Upgrade Modal ───────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-bright);
+      border-radius: 20px;
+      padding: 40px 36px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+    }
+    .modal-icon { font-size: 48px; margin-bottom: 16px; }
+    .modal-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+    .modal-card > p { color: var(--text-secondary); font-family: 'DM Mono', monospace; font-size: 14px; margin-bottom: 24px; }
+    .modal-price {
+      font-size: 52px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #6366f1, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+    .modal-price span { font-size: 18px; opacity: 0.6; }
+    .modal-period {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    .modal-features {
+      list-style: none;
+      text-align: left;
+      background: rgba(99,102,241,0.08);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .modal-features li {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 5px 0;
+    }
+    .modal-features li::before { content: '✓ '; color: var(--success); font-weight: 700; }
+    .upgrade-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-bottom: 12px;
+    }
+    .upgrade-btn:hover { opacity: 0.9; }
+    .modal-dismiss {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 8px;
+      transition: color 0.2s;
+    }
+    .modal-dismiss:hover { color: var(--text-primary); }
+
     /* ── Domain card header (name + score side by side) ─── */
     .domain-card-header {
       display: flex;
@@ -1048,6 +1165,17 @@
           </div>
         </div>
 
+        <!-- AUTH GATE: shown when results are ready but user is not logged in -->
+        <div id="authGate" class="auth-gate">
+          <div class="input-wrapper" style="text-align:center;">
+            <div class="auth-gate-icon">✨</div>
+            <h2 class="cta-heading">Your domains are ready</h2>
+            <p class="cta-subheading" style="margin-bottom:28px;">Sign in to see your 10 personalised suggestions</p>
+            <div id="clerk-auth-container"></div>
+            <p class="auth-gate-note">Free &middot; 5 consultations/month &middot; No credit card needed</p>
+          </div>
+        </div>
+
         <div id="resultsStage" class="results-container">
           <div class="input-wrapper">
             <div class="results-header">
@@ -1217,6 +1345,25 @@
     </div>
   </footer>
 
+  <!-- UPGRADE MODAL -->
+  <div id="upgradeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-icon">🚀</div>
+      <h2>You've used all 5 free consultations</h2>
+      <p>Upgrade to Pro for unlimited consultations and full access</p>
+      <div class="modal-price">$9<span>/mo</span></div>
+      <p class="modal-period">Cancel anytime</p>
+      <ul class="modal-features">
+        <li>Unlimited consultations</li>
+        <li>Domain score &amp; live pricing</li>
+        <li>Social handle checks</li>
+        <li>Priority support</li>
+      </ul>
+      <button class="upgrade-btn" onclick="startCheckout()">Upgrade Now →</button>
+      <button class="modal-dismiss" onclick="closeUpgradeModal()">Maybe later</button>
+    </div>
+  </div>
+
   <script>
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -1238,6 +1385,8 @@
     let lastAvailability = {};
     let lastPrices = {};
     let activeFilter = 'all';
+    let clerk = null;
+    let pendingAuth = false;
 
     function wait(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -1430,38 +1579,60 @@
       updateProgress(70);
 
       await wait(800);
-      addMessage('thinking', '🎯', 'Generating your personalized suggestions...');
-      updateProgress(78);
+      addMessage('thinking', '', 'Generating your personalised suggestions...');
+      updateProgress(80);
 
-      // Fire real API call in parallel with the thinking animation
+      await wait(1500);
+      addMessage('thinking', '', 'Brainstorming creative combinations...');
+      updateProgress(88);
+
+      await wait(1500);
+      addMessage('thinking', '', 'Finalising your results...');
+      updateProgress(96);
+
+      await wait(800);
+      updateProgress(100);
+      addMessage('acknowledgment', '', '✨ Your domains are ready!');
+      await wait(600);
+
+      // Gate: check auth before showing results
+      await handlePostAnimation();
+    }
+
+    async function handlePostAnimation() {
+      if (!clerk || !clerk.user) {
+        // Save state in case OAuth causes a page redirect
+        sessionStorage.setItem('pendingDescription', document.getElementById('businessDescription').value);
+        sessionStorage.setItem('pendingAnswers', JSON.stringify(answers));
+        showAuthGate();
+        return;
+      }
+      const token = await clerk.session.getToken();
+      await fetchAndShowResults(token);
+    }
+
+    async function fetchAndShowResults(token) {
+      // Make sure thinkingStage is visible while we fetch
+      document.getElementById('authGate').classList.remove('active');
+      document.getElementById('thinkingStage').classList.add('active');
+      addMessage('thinking', '', 'Loading your suggestions...');
+
       const description = document.getElementById('businessDescription').value;
-      const suggestPromise = fetchSuggestions(description, answers);
-
-      await wait(1800);
-      addMessage('thinking', '✨', 'Brainstorming creative combinations...');
-      updateProgress(85);
-
-      // Await the suggestion results
       let suggestions;
       try {
-        suggestions = await suggestPromise;
+        suggestions = await fetchSuggestions(description, answers, token);
       } catch (err) {
-        console.error('Suggestion fetch failed:', err);
-        addMessage('thinking', '⚠️', 'Could not reach AI. Check your connection and try again.');
-        updateProgress(100);
-        await wait(1000);
+        if (err.status === 402) {
+          document.getElementById('thinkingStage').classList.remove('active');
+          showUpgradeModal();
+          return;
+        }
         showResultsError('AI suggestions are unavailable right now. Please try again in a moment.');
         return;
       }
 
-      addMessage('thinking', '📝', `Generated ${suggestions.length} creative options!`);
-      updateProgress(90);
+      addMessage('thinking', '', 'Checking availability and prices...');
 
-      await wait(800);
-      addMessage('thinking', '🔍', 'Checking domain availability across TLDs...');
-      updateProgress(93);
-
-      // Check availability AND prices in parallel
       const domainList = suggestions.map(s => s.name + s.tld);
       const tldList = [...new Set(suggestions.map(s => s.tld))];
       const [availability, prices] = await Promise.all([
@@ -1469,10 +1640,8 @@
         fetchDomainPrices(tldList),
       ]);
 
-      updateProgress(100);
-      addMessage('acknowledgment', '🎉', '✨ Your domains are ready!');
-
-      await wait(800);
+      addMessage('acknowledgment', '', '✨ Here are your domains!');
+      await wait(600);
       showResults(suggestions, availability, prices);
     }
 
@@ -1533,15 +1702,19 @@
 
     // ── API helpers ────────────────────────────────────────────────────────────
 
-    async function fetchSuggestions(description, answersObj) {
+    async function fetchSuggestions(description, answersObj, token = null) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch('/api/suggest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ description, answers: answersObj }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `HTTP ${res.status}`);
+        const error = new Error(err.error || `HTTP ${res.status}`);
+        error.status = res.status;
+        throw error;
       }
       const data = await res.json();
       return data.suggestions;
@@ -1698,11 +1871,17 @@
       addMessage('thinking', '', 'Generating fresh suggestions...');
       updateProgress(78);
 
+      const token = clerk?.user ? await clerk.session.getToken() : null;
       const description = document.getElementById('businessDescription').value;
       let suggestions;
       try {
-        suggestions = await fetchSuggestions(description, answers);
+        suggestions = await fetchSuggestions(description, answers, token);
       } catch (err) {
+        if (err.status === 402) {
+          document.getElementById('thinkingStage').classList.remove('active');
+          showUpgradeModal();
+          return;
+        }
         showResultsError('AI suggestions are unavailable right now. Please try again in a moment.');
         return;
       }
@@ -1754,6 +1933,120 @@
       currentQuestion = null;
       if (questionTimer) clearInterval(questionTimer);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── Auth gate ──────────────────────────────────────────────────────────────
+
+    function showAuthGate() {
+      document.getElementById('thinkingStage').classList.remove('active');
+      document.getElementById('authGate').classList.add('active');
+      pendingAuth = true;
+
+      // Mount Clerk's SignIn component inside the auth gate
+      if (clerk) {
+        clerk.mountSignIn(document.getElementById('clerk-auth-container'), {
+          appearance: {
+            variables: {
+              colorPrimary: '#6366f1',
+              colorBackground: '#0f1624',
+              colorText: '#f1f5f9',
+              colorTextSecondary: '#cbd5e1',
+              colorInputBackground: '#080c14',
+              colorInputText: '#f1f5f9',
+              borderRadius: '10px',
+            },
+          },
+        });
+      }
+    }
+
+    function hideAuthGate() {
+      document.getElementById('authGate').classList.remove('active');
+      pendingAuth = false;
+      // Unmount Clerk component to avoid duplicate mount
+      try { clerk.unmountSignIn(document.getElementById('clerk-auth-container')); } catch {}
+    }
+
+    // ── Upgrade modal ──────────────────────────────────────────────────────────
+
+    function showUpgradeModal() {
+      document.getElementById('upgradeModal').classList.add('active');
+    }
+
+    function closeUpgradeModal() {
+      document.getElementById('upgradeModal').classList.remove('active');
+    }
+
+    async function startCheckout() {
+      if (!clerk?.user) return;
+      try {
+        const token = await clerk.session.getToken();
+        const res = await fetch('/api/create-checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ userId: clerk.user.id }),
+        });
+        const data = await res.json();
+        if (data.url) window.location.href = data.url;
+      } catch (err) {
+        console.error('Checkout error:', err);
+      }
+    }
+
+    // ── Clerk initialisation ───────────────────────────────────────────────────
+
+    async function initClerk() {
+      try {
+        clerk = window.Clerk;
+        await clerk.load();
+
+        // Listen for auth state changes (fires after login without page reload)
+        clerk.addListener(async ({ user }) => {
+          if (user && pendingAuth) {
+            hideAuthGate();
+            sessionStorage.removeItem('pendingDescription');
+            sessionStorage.removeItem('pendingAnswers');
+            const token = await clerk.session.getToken();
+            await fetchAndShowResults(token);
+          }
+        });
+
+        // Check if user logged in via OAuth redirect and has pending results
+        if (clerk.user) {
+          const desc = sessionStorage.getItem('pendingDescription');
+          const savedAnswers = sessionStorage.getItem('pendingAnswers');
+          if (desc && savedAnswers) {
+            sessionStorage.removeItem('pendingDescription');
+            sessionStorage.removeItem('pendingAnswers');
+            answers = JSON.parse(savedAnswers);
+            document.getElementById('businessDescription').value = desc;
+            document.getElementById('businessDesc').textContent = desc;
+            document.getElementById('inputStage').classList.add('hidden');
+            document.getElementById('thinkingStage').classList.add('active');
+            addMessage('acknowledgment', '', '✨ Welcome back! Loading your results...');
+            const token = await clerk.session.getToken();
+            await fetchAndShowResults(token);
+          }
+        }
+      } catch (err) {
+        console.warn('Clerk failed to load:', err);
+      }
+    }
+
+    // Check for ?upgraded=true param on return from Stripe
+    if (new URLSearchParams(window.location.search).get('upgraded') === 'true') {
+      history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => alert('🎉 Welcome to Pro! Your account has been upgraded.'), 500);
+    }
+
+    // Init Clerk when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initClerk);
+    } else {
+      initClerk();
     }
 
     // ── Utilities ──────────────────────────────────────────────────────────────
