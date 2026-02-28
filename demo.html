@@ -907,7 +907,11 @@
       letter-spacing: normal !important;
       font-family: 'Syne', sans-serif !important;
     }
-    #clerk-auth-container .cl-rootBox { width: 100%; }
+    #clerk-auth-container {
+      display: flex;
+      justify-content: center;
+    }
+    #clerk-auth-container .cl-rootBox { width: 100%; max-width: 480px; }
     #clerk-auth-container .cl-card {
       background: rgba(15, 22, 36, 0.95) !important;
       border: 1px solid rgba(99, 102, 241, 0.3) !important;
