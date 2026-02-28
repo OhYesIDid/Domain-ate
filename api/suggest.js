@@ -111,14 +111,20 @@ export default async function handler(req, res) {
   const plan   = payload.metadata?.plan || payload.publicMetadata?.plan || 'free';
 
   // ── Usage check (free plan only) ────────────────────────────────────────
+  // Wrapped in try/catch so a missing/misconfigured Upstash doesn't crash the
+  // whole function — it just skips the limit check and logs a warning.
   if (plan !== 'pro') {
-    const usage = await getUsage(userId);
-    if (usage >= FREE_LIMIT) {
-      return res.status(402).json({
-        error: `You've used all ${FREE_LIMIT} free consultations this month. Upgrade to Pro for unlimited access.`,
-        usage,
-        limit: FREE_LIMIT,
-      });
+    try {
+      const usage = await getUsage(userId);
+      if (usage >= FREE_LIMIT) {
+        return res.status(402).json({
+          error: `You've used all ${FREE_LIMIT} free consultations this month. Upgrade to Pro for unlimited access.`,
+          usage,
+          limit: FREE_LIMIT,
+        });
+      }
+    } catch (usageErr) {
+      console.warn('Usage check skipped (Upstash not configured?):', usageErr.message);
     }
   }
 
