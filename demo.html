@@ -1968,8 +1968,8 @@
       // Mount Clerk's SignIn component inside the auth gate
       if (clerk) {
         clerk.mountSignIn(document.getElementById('clerk-auth-container'), {
-          afterSignInUrl:  window.location.href,  // redirect back to demo.html
-          afterSignUpUrl:  window.location.href,
+          afterSignInUrl:  window.location.origin + '/demo.html',
+          afterSignUpUrl:  window.location.origin + '/demo.html',
           appearance: {
             variables: {
               colorPrimary:          '#6366f1',
@@ -2036,7 +2036,13 @@
     async function initClerk() {
       try {
         clerk = window.Clerk;
-        await clerk.load();
+        // Pass afterSignInUrl at load() time — this covers OAuth redirects
+        // where the per-component option can't travel through the OAuth state
+        const demoUrl = window.location.origin + '/demo.html';
+        await clerk.load({
+          afterSignInUrl:  demoUrl,
+          afterSignUpUrl:  demoUrl,
+        });
 
         // Listen for auth state changes (fires after login without page reload)
         clerk.addListener(async ({ user }) => {
