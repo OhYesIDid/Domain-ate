@@ -896,7 +896,20 @@
       margin-top: 20px;
     }
 
-    /* Override Clerk component to match dark theme */
+    /* Override Clerk component — reset site heading styles bleeding in */
+    #clerk-auth-container * {
+      font-family: 'DM Mono', monospace !important;
+    }
+    #clerk-auth-container h1,
+    #clerk-auth-container h2,
+    #clerk-auth-container h3,
+    #clerk-auth-container .cl-headerTitle {
+      font-size: 18px !important;
+      font-weight: 600 !important;
+      line-height: 1.4 !important;
+      letter-spacing: normal !important;
+      font-family: 'Syne', sans-serif !important;
+    }
     #clerk-auth-container .cl-rootBox { width: 100%; }
     #clerk-auth-container .cl-card {
       background: transparent !important;
