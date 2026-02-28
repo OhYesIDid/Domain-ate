@@ -692,10 +692,13 @@
 
     .domain-name {
       font-family: 'DM Mono', monospace;
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 500;
       color: var(--text-primary);
       word-break: break-all;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .domain-name .tld {
       color: var(--accent-light);
@@ -774,7 +777,183 @@
     }
     .results-error p { margin-bottom: 16px; }
 
+    /* ── Availability summary ─────────────────────────────────── */
+    .availability-summary {
+      text-align: center;
+      margin-bottom: 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .availability-summary strong {
+      color: var(--success);
+      font-size: 18px;
+    }
+
+    /* ── Filter bar ───────────────────────────────────────────── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .filter-pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-pill:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+    .filter-pill.active {
+      background: rgba(99,102,241,0.15);
+      border-color: var(--accent);
+      color: var(--accent-light);
+    }
+
+    /* ── Taken card dim ──────────────────────────────────────── */
+    .domain-card.taken {
+      opacity: 0.35;
+    }
+    .domain-card.taken:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--border);
+    }
+    .domain-card.taken .domain-name {
+      text-decoration: line-through;
+      text-decoration-color: rgba(239,68,68,0.6);
+    }
+
+    /* ── Copy button ─────────────────────────────────────────── */
+    .copy-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 2px 6px;
+      font-size: 15px;
+      line-height: 1;
+      transition: color 0.2s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { color: var(--accent-light); }
+    .copy-btn.copied { color: var(--success); }
+
+    /* ── Results action buttons ──────────────────────────────── */
+    .results-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .regenerate-btn {
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15));
+      border: 2px solid var(--border-bright);
+      border-radius: 12px;
+      color: var(--accent-light);
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .regenerate-btn:hover {
+      background: rgba(99,102,241,0.25);
+      color: var(--text-primary);
+    }
+
+    /* ── Domain card header (name + score side by side) ─── */
+    .domain-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    /* ── Domain Score pill ──────────────────────────────── */
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: help;
+      position: relative;
+      flex-shrink: 0;
+      white-space: nowrap;
+      align-self: flex-start;
+    }
+    .score-pill.score-green { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+    .score-pill.score-amber { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+    .score-pill.score-red   { background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+
+    .score-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      right: 0;
+      background: #1a2235;
+      border: 1px solid var(--border-bright);
+      border-radius: 10px;
+      padding: 12px;
+      width: 210px;
+      z-index: 20;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      text-align: left;
+    }
+    .score-pill:hover .score-tooltip { display: block; }
+    .score-tooltip-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .score-tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      color: var(--text-muted);
+    }
+    .score-tooltip-row span:last-child { color: var(--text-secondary); }
+
+    /* ── Domain meta row (price + social handle) ─────── */
+    .domain-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .price-val { color: var(--text-secondary); }
+    .social-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .social-link:hover { color: var(--accent-light); }
+
     @media (max-width: 768px) {
+      .results-actions { grid-template-columns: 1fr; }
       .hero h1 { font-size: 40px; }
       .hero-subtitle { font-size: 18px; }
       .nav-links { display: none; }
@@ -876,11 +1055,22 @@
               <p id="resultsSubheading">10 personalized recommendations, availability checked</p>
             </div>
 
+            <div id="availabilitySummary" class="availability-summary"></div>
+
+            <div class="filter-bar">
+              <button class="filter-pill active" onclick="filterResults('all', this)">All</button>
+              <button class="filter-pill" onclick="filterResults('available', this)">Available</button>
+              <button class="filter-pill" onclick="filterResults('brandable', this)">Brandable</button>
+              <button class="filter-pill" onclick="filterResults('keyword', this)">Keyword</button>
+              <button class="filter-pill" onclick="filterResults('hybrid', this)">Hybrid</button>
+            </div>
+
             <div id="domainsGrid" class="domains-grid"></div>
 
-            <button class="start-over-btn" onclick="resetDemo()">
-              ↩ Start Over with a New Idea
-            </button>
+            <div class="results-actions">
+              <button class="regenerate-btn" onclick="regenerateSuggestions()">↻ Regenerate</button>
+              <button class="start-over-btn" onclick="resetDemo()">↩ Start Over</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1044,6 +1234,10 @@
     let answers = {};
     let progress = 0;
     let questionTimer = null;
+    let lastSuggestions = [];
+    let lastAvailability = {};
+    let lastPrices = {};
+    let activeFilter = 'all';
 
     function wait(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -1267,15 +1461,74 @@
       addMessage('thinking', '🔍', 'Checking domain availability across TLDs...');
       updateProgress(93);
 
-      // Check availability in parallel for all suggestions
+      // Check availability AND prices in parallel
       const domainList = suggestions.map(s => s.name + s.tld);
-      const availability = await checkDomainAvailability(domainList);
+      const tldList = [...new Set(suggestions.map(s => s.tld))];
+      const [availability, prices] = await Promise.all([
+        checkDomainAvailability(domainList),
+        fetchDomainPrices(tldList),
+      ]);
 
       updateProgress(100);
       addMessage('acknowledgment', '🎉', '✨ Your domains are ready!');
 
       await wait(800);
-      showResults(suggestions, availability);
+      showResults(suggestions, availability, prices);
+    }
+
+    // ── Domain Score ───────────────────────────────────────────────────────────
+
+    function computeDomainScore(s, avail) {
+      let score = 0;
+      const breakdown = [];
+
+      // TLD authority (22pts)
+      const tldMap = { '.com': 22, '.io': 17, '.ai': 17, '.co': 14, '.app': 14, '.store': 14, '.dev': 14 };
+      const tldPts = tldMap[s.tld] ?? 8;
+      score += tldPts;
+      breakdown.push({ label: 'TLD authority', pts: tldPts, max: 22 });
+
+      // Availability (22pts)
+      const availVal = avail[s.name + s.tld];
+      const availPts = availVal === true ? 22 : availVal === false ? 0 : 8;
+      score += availPts;
+      breakdown.push({ label: 'Availability', pts: availPts, max: 22 });
+
+      // Length (20pts)
+      const len = s.name.length;
+      const lenPts = len <= 7 ? 20 : len <= 10 ? 15 : len <= 13 ? 10 : 5;
+      score += lenPts;
+      breakdown.push({ label: 'Length', pts: lenPts, max: 20 });
+
+      // Cleanliness (16pts) – no hyphens or numbers
+      const hasHyphen = s.name.includes('-');
+      const hasNumber = /\d/.test(s.name);
+      const cleanPts = (!hasHyphen && !hasNumber) ? 16 : (hasHyphen && hasNumber) ? 0 : 8;
+      score += cleanPts;
+      breakdown.push({ label: 'Cleanliness', pts: cleanPts, max: 16 });
+
+      // Pronounceability (12pts) – healthy vowel ratio
+      const vowelCount = (s.name.match(/[aeiou]/gi) || []).length;
+      const ratio = vowelCount / s.name.length;
+      const pronPts = (ratio >= 0.25 && ratio <= 0.5) ? 12 : 6;
+      score += pronPts;
+      breakdown.push({ label: 'Pronounceable', pts: pronPts, max: 12 });
+
+      // Keyword clarity (8pts)
+      const stylePts = s.style === 'keyword' ? 8 : s.style === 'hybrid' ? 4 : 2;
+      score += stylePts;
+      breakdown.push({ label: 'Keyword clarity', pts: stylePts, max: 8 });
+
+      return { score, breakdown };
+    }
+
+    function renderScorePill(s, avail) {
+      const { score, breakdown } = computeDomainScore(s, avail);
+      const cls = score >= 80 ? 'score-green' : score >= 60 ? 'score-amber' : 'score-red';
+      const rows = breakdown.map(r =>
+        `<div class="score-tooltip-row"><span>${r.label}</span><span>${r.pts}/${r.max}</span></div>`
+      ).join('');
+      return `<span class="score-pill ${cls}">${score}<span style="font-size:10px;opacity:0.6">/100</span><div class="score-tooltip"><div class="score-tooltip-title">Domain Score: ${score}/100</div>${rows}</div></span>`;
     }
 
     // ── API helpers ────────────────────────────────────────────────────────────
@@ -1309,13 +1562,48 @@
       }
     }
 
+    async function fetchDomainPrices(tlds) {
+      try {
+        const res = await fetch('/api/domain-price', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tlds }),
+        });
+        if (!res.ok) return {};
+        const data = await res.json();
+        return data.prices || {};
+      } catch {
+        return {};
+      }
+    }
+
     // ── Render results ─────────────────────────────────────────────────────────
 
-    function showResults(suggestions, availability) {
-      document.getElementById('thinkingStage').classList.remove('active');
+    function sortSuggestions(suggestions, availability) {
+      return [...suggestions].sort((a, b) => {
+        const aAvail = availability[a.name + a.tld];
+        const bAvail = availability[b.name + b.tld];
+        const rank = v => v === true ? 0 : v === false ? 2 : 1;
+        return rank(aAvail) - rank(bAvail);
+      });
+    }
 
+    function renderDomainCards(suggestions, availability) {
       const grid = document.getElementById('domainsGrid');
-      grid.innerHTML = suggestions.map(s => {
+
+      let filtered = suggestions;
+      if (activeFilter === 'available') {
+        filtered = suggestions.filter(s => availability[s.name + s.tld] === true);
+      } else if (['brandable', 'keyword', 'hybrid'].includes(activeFilter)) {
+        filtered = suggestions.filter(s => s.style === activeFilter);
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="results-error" style="grid-column:1/-1"><p>No domains match this filter.</p></div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(s => {
         const fullDomain = s.name + s.tld;
         const avail = availability[fullDomain];
         let availClass, availLabel;
@@ -1324,25 +1612,115 @@
         else                      { availClass = 'unknown';   availLabel = '? Unknown'; }
 
         const registerUrl = `https://www.namecheap.com/domains/registration/results/?domain=${encodeURIComponent(fullDomain)}`;
+        const whoisUrl    = `https://www.whois.com/whois/${encodeURIComponent(fullDomain)}`;
+        const namechkUrl  = `https://namechk.com/${encodeURIComponent(s.name)}`;
+
+        const price = lastPrices[s.tld];
+        const priceHtml = price != null
+          ? `<span class="domain-price"><span class="price-val">$${price.toFixed(2)}/yr</span></span>`
+          : '';
 
         return `
-          <div class="domain-card">
-            <div class="domain-name">${escapeHtml(s.name)}<span class="tld">${escapeHtml(s.tld)}</span></div>
+          <div class="domain-card ${avail === false ? 'taken' : ''}">
+            <div class="domain-card-header">
+              <div class="domain-name">
+                <span>${escapeHtml(s.name)}<span class="tld">${escapeHtml(s.tld)}</span></span>
+                <button class="copy-btn" onclick="copyDomain('${escapeHtml(fullDomain)}', this)" title="Copy domain name">⎘</button>
+              </div>
+              ${renderScorePill(s, availability)}
+            </div>
             <div class="domain-badges">
               <span class="badge style-badge ${s.style}">${capitalise(s.style)}</span>
               <span class="badge avail-badge ${availClass}">${availLabel}</span>
             </div>
             <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
-            ${avail !== false
+            <div class="domain-meta">
+              ${priceHtml}
+              <a href="${namechkUrl}" target="_blank" rel="noopener" class="social-link">@ Handles →</a>
+            </div>
+            ${avail === true
               ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">Register on Namecheap →</a>`
-              : ''}
+              : avail === false
+              ? ''
+              : `<a class="register-link" href="${whoisUrl}" target="_blank" rel="noopener">Check manually →</a>`}
           </div>
         `;
       }).join('');
+    }
+
+    function showResults(suggestions, availability, prices = {}) {
+      document.getElementById('thinkingStage').classList.remove('active');
+
+      lastSuggestions = sortSuggestions(suggestions, availability);
+      lastAvailability = availability;
+      lastPrices = prices;
+      activeFilter = 'all';
+
+      // Reset filter pills
+      document.querySelectorAll('.filter-pill').forEach((p, i) => {
+        p.classList.toggle('active', i === 0);
+      });
+
+      // Availability summary
+      const availableCount = suggestions.filter(s => availability[s.name + s.tld] === true).length;
+      document.getElementById('availabilitySummary').innerHTML =
+        `<strong>${availableCount}</strong> of ${suggestions.length} domains available`;
+
+      renderDomainCards(lastSuggestions, lastAvailability);
 
       const resultsEl = document.getElementById('resultsStage');
       resultsEl.classList.add('active');
       resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function filterResults(type, btn) {
+      activeFilter = type;
+      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      renderDomainCards(lastSuggestions, lastAvailability);
+    }
+
+    function copyDomain(domain, btn) {
+      navigator.clipboard.writeText(domain).then(() => {
+        btn.textContent = '✓';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = '⎘';
+          btn.classList.remove('copied');
+        }, 1500);
+      });
+    }
+
+    async function regenerateSuggestions() {
+      document.getElementById('resultsStage').classList.remove('active');
+      document.getElementById('thinkingStage').classList.add('active');
+
+      addMessage('thinking', '', 'Generating fresh suggestions...');
+      updateProgress(78);
+
+      const description = document.getElementById('businessDescription').value;
+      let suggestions;
+      try {
+        suggestions = await fetchSuggestions(description, answers);
+      } catch (err) {
+        showResultsError('AI suggestions are unavailable right now. Please try again in a moment.');
+        return;
+      }
+
+      addMessage('thinking', '', 'Checking availability and prices...');
+      updateProgress(90);
+
+      const domainList = suggestions.map(s => s.name + s.tld);
+      const tldList = [...new Set(suggestions.map(s => s.tld))];
+      const [availability, prices] = await Promise.all([
+        checkDomainAvailability(domainList),
+        fetchDomainPrices(tldList),
+      ]);
+
+      updateProgress(100);
+      addMessage('acknowledgment', '', 'Fresh suggestions ready!');
+      await wait(600);
+      showResults(suggestions, availability, prices);
     }
 
     function showResultsError(message) {
