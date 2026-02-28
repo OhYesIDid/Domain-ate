@@ -1968,6 +1968,7 @@
       // Mount Clerk's SignIn component inside the auth gate
       if (clerk) {
         clerk.mountSignIn(document.getElementById('clerk-auth-container'), {
+          routing:         'virtual',   // prevent any URL redirect after login
           appearance: {
             variables: {
               colorPrimary:          '#6366f1',
@@ -1983,8 +1984,8 @@
               fontSize:              '14px',
             },
             elements: {
-              card:                  'background: rgba(15,22,36,0.95); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);',
-              headerTitle:           'font-size: 20px; font-weight: 700; font-family: Syne, sans-serif;',
+              card:                     'background: rgba(15,22,36,0.95); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);',
+              headerTitle:              'font-size: 20px; font-weight: 700; font-family: Syne, sans-serif;',
               socialButtonsBlockButton: 'background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3);',
               socialButtonsBlockButtonText: 'color: #f1f5f9;',
             },
@@ -2038,10 +2039,20 @@
 
         // Listen for auth state changes (fires after login without page reload)
         clerk.addListener(async ({ user }) => {
-          if (user && pendingAuth) {
-            hideAuthGate();
+          // Use pendingAuth flag OR sessionStorage as fallback (covers soft reloads)
+          const hasPending = pendingAuth || !!sessionStorage.getItem('pendingDescription');
+          if (user && hasPending) {
+            // Restore saved state if needed (soft reload case)
+            const savedDesc    = sessionStorage.getItem('pendingDescription');
+            const savedAnswers = sessionStorage.getItem('pendingAnswers');
+            if (savedDesc && savedAnswers) {
+              answers = JSON.parse(savedAnswers);
+              document.getElementById('businessDescription').value = savedDesc;
+              document.getElementById('businessDesc').textContent  = savedDesc;
+            }
             sessionStorage.removeItem('pendingDescription');
             sessionStorage.removeItem('pendingAnswers');
+            hideAuthGate();
             const token = await clerk.session.getToken();
             await fetchAndShowResults(token);
           }
