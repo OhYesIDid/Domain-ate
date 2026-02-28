@@ -6,18 +6,21 @@ const FREE_LIMIT = 5;
 
 // ── Clerk JWT verification ──────────────────────────────────────────────────
 
-let cachedJwks = null;
-let jwksCachedAt = 0;
+// Cache JWKS per issuer so we don't fetch on every request
+const jwksCache = {};
 
-async function getClerkJwks() {
+async function getJwksForIssuer(iss) {
   const now = Date.now();
-  if (cachedJwks && now - jwksCachedAt < 3_600_000) return cachedJwks;
-  const res = await fetch(
-    `https://${process.env.CLERK_FRONTEND_API}/.well-known/jwks.json`
-  );
-  cachedJwks = await res.json();
-  jwksCachedAt = now;
-  return cachedJwks;
+  if (jwksCache[iss] && now - jwksCache[iss].at < 3_600_000) {
+    return jwksCache[iss].keys;
+  }
+  // Derive JWKS URL from the token's own issuer claim — no env var needed
+  const jwksUrl = `${iss}/.well-known/jwks.json`;
+  const res = await fetch(jwksUrl);
+  if (!res.ok) throw new Error(`JWKS fetch failed: ${res.status}`);
+  const { keys } = await res.json();
+  jwksCache[iss] = { keys, at: now };
+  return keys;
 }
 
 async function verifyClerkToken(token) {
@@ -26,10 +29,14 @@ async function verifyClerkToken(token) {
     if (parts.length !== 3) return null;
     const header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString());
     const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
-    if (payload.exp * 1000 < Date.now()) return null;
 
-    const jwks = await getClerkJwks();
-    const jwk  = jwks.keys.find(k => k.kid === header.kid);
+    // Basic claim checks
+    if (payload.exp * 1000 < Date.now()) return null;
+    if (!payload.iss) return null;
+
+    // Fetch the public keys from the token's own issuer
+    const keys = await getJwksForIssuer(payload.iss);
+    const jwk  = keys.find(k => k.kid === header.kid);
     if (!jwk) return null;
 
     const publicKey = createPublicKey({ key: jwk, format: 'jwk' });
@@ -40,8 +47,9 @@ async function verifyClerkToken(token) {
       Buffer.from(parts[2], 'base64url')
     );
     if (!valid) return null;
-    return payload; // { sub: userId, metadata: { plan } ... }
-  } catch {
+    return payload; // { sub: userId, publicMetadata: { plan } ... }
+  } catch (err) {
+    console.warn('verifyClerkToken error:', err.message);
     return null;
   }
 }
