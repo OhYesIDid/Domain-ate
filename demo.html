@@ -1968,7 +1968,8 @@
       // Mount Clerk's SignIn component inside the auth gate
       if (clerk) {
         clerk.mountSignIn(document.getElementById('clerk-auth-container'), {
-          routing:         'virtual',   // prevent any URL redirect after login
+          afterSignInUrl:  window.location.href,  // redirect back to demo.html
+          afterSignUpUrl:  window.location.href,
           appearance: {
             variables: {
               colorPrimary:          '#6366f1',
