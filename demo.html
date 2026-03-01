@@ -1085,6 +1085,7 @@
       flex-wrap: wrap;
     }
     .price-val { color: var(--text-secondary); }
+    .price-val.premium-price { color: #f59e0b; }
     .social-link {
       color: var(--text-muted);
       text-decoration: none;
@@ -1406,6 +1407,7 @@
     let questionTimer = null;
     let lastSuggestions = [];
     let lastAvailability = {};
+    let lastPremiumPrices = {};
     let lastPrices = {};
     let userCurrency = 'USD';
     let userRate = 1;
@@ -1661,16 +1663,18 @@
       const domainList = suggestions.map(s => s.name + s.tld);
       const tldList = [...new Set(suggestions.map(s => s.tld))];
       userCurrency = detectUserCurrency();
-      const [availability, prices, rate] = await Promise.all([
+      const [availData, prices, rate] = await Promise.all([
         checkDomainAvailability(domainList),
         fetchDomainPrices(tldList),
         fetchExchangeRate(userCurrency),
       ]);
       userRate = rate;
+      const availability = availData.results;
+      const premiumPrices = availData.premiumPrices;
 
       addMessage('acknowledgment', '', '✨ Here are your domains!');
       await wait(600);
-      showResults(suggestions, availability, prices);
+      showResults(suggestions, availability, prices, premiumPrices);
     }
 
     // ── Domain Score ───────────────────────────────────────────────────────────
@@ -1755,11 +1759,11 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ domains }),
         });
-        if (!res.ok) return {};
+        if (!res.ok) return { results: {}, premiumPrices: {} };
         const data = await res.json();
-        return data.results || {};
+        return { results: data.results || {}, premiumPrices: data.premiumPrices || {} };
       } catch {
-        return {};
+        return { results: {}, premiumPrices: {} };
       }
     }
 
@@ -1870,10 +1874,13 @@
         const whoisUrl    = `https://www.whois.com/whois/${encodeURIComponent(fullDomain)}`;
         const namechkUrl  = `https://namechk.com/${encodeURIComponent(s.name)}`;
 
-        const price = lastPrices[s.tld];
-        const priceHtml = price != null
-          ? `<span class="domain-price"><span class="price-val">${formatPrice(price, userRate, userCurrency)}/yr</span></span>`
-          : '';
+        const premiumUsd = lastPremiumPrices[fullDomain];
+        const stdPrice   = lastPrices[s.tld];
+        const priceHtml  = premiumUsd != null
+          ? `<span class="domain-price"><span class="price-val premium-price" title="Premium domain — registry-set price">${formatPrice(premiumUsd, userRate, userCurrency)}/yr ⭐</span></span>`
+          : stdPrice != null
+            ? `<span class="domain-price"><span class="price-val" title="Estimated standard registration rate">~${formatPrice(stdPrice, userRate, userCurrency)}/yr</span></span>`
+            : '';
 
         return `
           <div class="domain-card ${avail === false ? 'taken' : ''}">
@@ -1903,12 +1910,13 @@
       }).join('');
     }
 
-    function showResults(suggestions, availability, prices = {}) {
+    function showResults(suggestions, availability, prices = {}, premiumPrices = {}) {
       document.getElementById('thinkingStage').classList.remove('active');
 
       lastSuggestions = sortSuggestions(suggestions, availability);
       lastAvailability = availability;
       lastPrices = prices;
+      lastPremiumPrices = premiumPrices;
       activeFilter = 'all';
 
       // Reset filter pills
@@ -1974,17 +1982,19 @@
       const domainList = suggestions.map(s => s.name + s.tld);
       const tldList = [...new Set(suggestions.map(s => s.tld))];
       userCurrency = detectUserCurrency();
-      const [availability, prices, rate] = await Promise.all([
+      const [availData, prices, rate] = await Promise.all([
         checkDomainAvailability(domainList),
         fetchDomainPrices(tldList),
         fetchExchangeRate(userCurrency),
       ]);
       userRate = rate;
+      const availability = availData.results;
+      const premiumPrices = availData.premiumPrices;
 
       updateProgress(100);
       addMessage('acknowledgment', '', 'Fresh suggestions ready!');
       await wait(600);
-      showResults(suggestions, availability, prices);
+      showResults(suggestions, availability, prices, premiumPrices);
     }
 
     function showResultsError(message) {

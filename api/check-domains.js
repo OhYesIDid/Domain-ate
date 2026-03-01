@@ -57,16 +57,25 @@ export default async function handler(req, res) {
         throw new Error('Namecheap API returned an error — falling back to RDAP');
       }
 
-      // Parse <DomainCheckResult Domain="..." Available="true" />
+      // Parse <DomainCheckResult Domain="..." Available="true" IsPremiumName="true" PremiumRegistrationPrice="..." />
       const results = {};
-      const regex   = /DomainCheckResult[^>]+Domain="([^"]+)"[^>]+Available="([^"]+)"/gi;
+      const premiumPrices = {};
+      const regex = /DomainCheckResult([^>]+)/gi;
       let match;
       while ((match = regex.exec(xml)) !== null) {
-        results[match[1].toLowerCase()] = match[2].toLowerCase() === 'true';
+        const attrs = match[1];
+        const domain    = (attrs.match(/Domain="([^"]+)"/i)    || [])[1]?.toLowerCase();
+        const available = (attrs.match(/Available="([^"]+)"/i) || [])[1]?.toLowerCase() === 'true';
+        const isPremium = (attrs.match(/IsPremiumName="([^"]+)"/i) || [])[1]?.toLowerCase() === 'true';
+        const premPrice = parseFloat((attrs.match(/PremiumRegistrationPrice="([^"]+)"/i) || [])[1] || '');
+        if (domain) {
+          results[domain] = available;
+          if (isPremium && !isNaN(premPrice)) premiumPrices[domain] = premPrice;
+        }
       }
 
       if (Object.keys(results).length > 0) {
-        return res.status(200).json({ results, source: 'namecheap' });
+        return res.status(200).json({ results, premiumPrices, source: 'namecheap' });
       }
 
       throw new Error('No results parsed from Namecheap XML — falling back to RDAP');
