@@ -1407,6 +1407,8 @@
     let lastSuggestions = [];
     let lastAvailability = {};
     let lastPrices = {};
+    let userCurrency = 'USD';
+    let userRate = 1;
     let activeFilter = 'all';
     let clerk = null;
     let pendingAuth = false;
@@ -1658,10 +1660,13 @@
 
       const domainList = suggestions.map(s => s.name + s.tld);
       const tldList = [...new Set(suggestions.map(s => s.tld))];
-      const [availability, prices] = await Promise.all([
+      userCurrency = detectUserCurrency();
+      const [availability, prices, rate] = await Promise.all([
         checkDomainAvailability(domainList),
         fetchDomainPrices(tldList),
+        fetchExchangeRate(userCurrency),
       ]);
+      userRate = rate;
 
       addMessage('acknowledgment', '', '✨ Here are your domains!');
       await wait(600);
@@ -1758,6 +1763,60 @@
       }
     }
 
+    // ── Currency helpers ────────────────────────────────────────────────────
+
+    function detectUserCurrency() {
+      try {
+        const locale = navigator.language || '';
+        const region = locale.includes('-') ? locale.split('-').pop().toUpperCase() : '';
+        const map = {
+          US:'USD', CA:'CAD', AU:'AUD', NZ:'NZD',
+          GB:'GBP',
+          DE:'EUR', FR:'EUR', IT:'EUR', ES:'EUR', NL:'EUR', BE:'EUR',
+          AT:'EUR', PT:'EUR', IE:'EUR', FI:'EUR', GR:'EUR', LU:'EUR',
+          JP:'JPY', CN:'CNY', IN:'INR', SG:'SGD', HK:'HKD',
+          KR:'KRW', TH:'THB', MY:'MYR', ID:'IDR', PH:'PHP',
+          CH:'CHF', SE:'SEK', NO:'NOK', DK:'DKK', PL:'PLN',
+          CZ:'CZK', HU:'HUF', RO:'RON',
+          MX:'MXN', BR:'BRL', AR:'ARS', CL:'CLP',
+          ZA:'ZAR', NG:'NGN', KE:'KES',
+          SA:'SAR', AE:'AED', IL:'ILS', TR:'TRY',
+        };
+        if (map[region]) return map[region];
+        // Fallback: timezone
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        if (tz.startsWith('Europe/London') || tz.startsWith('Europe/Belfast')) return 'GBP';
+        if (tz.startsWith('Europe/'))   return 'EUR';
+        if (tz.startsWith('Asia/Tokyo')) return 'JPY';
+        if (tz.startsWith('Asia/Kolkata') || tz.startsWith('Asia/Calcutta')) return 'INR';
+        if (tz.startsWith('Australia/')) return 'AUD';
+        if (tz.startsWith('America/') && /Toronto|Vancouver|Montreal|Halifax|Winnipeg|Edmonton/.test(tz)) return 'CAD';
+      } catch {}
+      return 'USD';
+    }
+
+    async function fetchExchangeRate(currency) {
+      if (currency === 'USD') return 1;
+      try {
+        const res = await fetch(`https://api.exchangerate-api.com/v4/latest/USD`);
+        if (!res.ok) return 1;
+        const data = await res.json();
+        return data.rates[currency] ?? 1;
+      } catch {
+        return 1;
+      }
+    }
+
+    function formatPrice(usdAmount, rate, currency) {
+      const amount = usdAmount * rate;
+      return new Intl.NumberFormat(navigator.language || 'en-US', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+        minimumFractionDigits: 0,
+      }).format(amount);
+    }
+
     async function fetchDomainPrices(tlds) {
       try {
         const res = await fetch('/api/domain-price', {
@@ -1813,7 +1872,7 @@
 
         const price = lastPrices[s.tld];
         const priceHtml = price != null
-          ? `<span class="domain-price"><span class="price-val">$${price.toFixed(2)}/yr</span></span>`
+          ? `<span class="domain-price"><span class="price-val">${formatPrice(price, userRate, userCurrency)}/yr</span></span>`
           : '';
 
         return `
@@ -1914,10 +1973,13 @@
 
       const domainList = suggestions.map(s => s.name + s.tld);
       const tldList = [...new Set(suggestions.map(s => s.tld))];
-      const [availability, prices] = await Promise.all([
+      userCurrency = detectUserCurrency();
+      const [availability, prices, rate] = await Promise.all([
         checkDomainAvailability(domainList),
         fetchDomainPrices(tldList),
+        fetchExchangeRate(userCurrency),
       ]);
+      userRate = rate;
 
       updateProgress(100);
       addMessage('acknowledgment', '', 'Fresh suggestions ready!');
