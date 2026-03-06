@@ -750,10 +750,8 @@
     }
 
     .register-link {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
+      display: block;
+      text-align: center;
       font-size: 13px;
       font-weight: 600;
       color: #6ee7b7;
@@ -772,10 +770,8 @@
       color: #a7f3d0;
     }
     .check-link {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
+      display: block;
+      text-align: center;
       font-size: 13px;
       font-weight: 500;
       color: var(--text-muted);
@@ -792,13 +788,6 @@
       border-color: var(--border-bright);
       color: var(--text-secondary);
     }
-    .cta-price {
-      font-size: 11px;
-      font-weight: 400;
-      opacity: 0.7;
-      flex-shrink: 0;
-    }
-    .cta-price.premium { color: #f59e0b; opacity: 1; }
 
     .start-over-btn {
       width: 100%;
@@ -1855,6 +1844,18 @@
       }).format(amount);
     }
 
+    // Compact version: uses narrow symbol ($, £, €) with no decimals for whole numbers
+    function compactPrice(usdAmount, rate, currency) {
+      const amount = usdAmount * rate;
+      return new Intl.NumberFormat(navigator.language || 'en-US', {
+        style: 'currency',
+        currency,
+        currencyDisplay: 'narrowSymbol',
+        maximumFractionDigits: 0,
+        minimumFractionDigits: 0,
+      }).format(amount);
+    }
+
     async function fetchDomainPrices(tlds) {
       try {
         const res = await fetch('/api/domain-price', {
@@ -1911,14 +1912,16 @@
         const premiumUsd = lastPremiumPrices[fullDomain];
         const stdPrice   = lastPrices[s.tld];
         const isPremium  = premiumUsd != null;
-        const priceLabel = isPremium
-          ? `${formatPrice(premiumUsd, userRate, userCurrency)}/yr ⭐`
+
+        // Compact price string for CTA label — uses narrow symbol ($, £, €), no decimals
+        const ctaPrice = isPremium
+          ? `${compactPrice(premiumUsd, userRate, userCurrency)}/yr ⭐`
           : stdPrice != null
-            ? `~${formatPrice(stdPrice, userRate, userCurrency)}/yr`
-            : '';
-        const priceBadge = priceLabel
-          ? `<span class="cta-price${isPremium ? ' premium' : ''}">${priceLabel}</span>`
-          : '';
+            ? `~${compactPrice(stdPrice, userRate, userCurrency)}/yr`
+            : null;
+
+        const registerLabel = ctaPrice ? `Register for ${ctaPrice}` : 'Register on Namecheap →';
+        const checkLabel    = ctaPrice ? `Check availability → ${ctaPrice}` : 'Check availability →';
 
         return `
           <div class="domain-card ${avail === false ? 'taken' : ''}">
@@ -1938,10 +1941,10 @@
               <a href="${namechkUrl}" target="_blank" rel="noopener" class="social-link">@ Handles →</a>
             </div>
             ${avail === true
-              ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener"><span>Register on Namecheap →</span>${priceBadge}</a>`
+              ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">${registerLabel}</a>`
               : avail === false
               ? ''
-              : `<a class="check-link" href="${whoisUrl}" target="_blank" rel="noopener"><span>Check availability →</span>${priceBadge}</a>`}
+              : `<a class="check-link" href="${whoisUrl}" target="_blank" rel="noopener">${checkLabel}</a>`}
           </div>
         `;
       }).join('');
