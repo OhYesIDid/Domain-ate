@@ -197,6 +197,13 @@ NAMING REQUIREMENTS
 - One obvious way to write it — no ambiguous spellings
 - No hyphens, no numbers
 
+AVAILABILITY AWARENESS
+Most obvious .com combinations are already registered. To maximise the chance of names actually being available:
+- Favour invented/coined words and unexpected combinations over common English word pairs
+- For .com names, use at least one non-dictionary element (a blend, a truncation, or a suffix like -ly, -ify, -io, -era, -ova)
+- Freely use .io, .app, .co, .ai TLDs where they suit the brand — these have far more availability than .com
+- The more creative and specific to this exact business, the more likely the domain is free
+
 AVOID (exclude any name that matches these)
 - Generic pairings of two common words (e.g. "QuickShop", "BestTools", "FastBuy")
 - Double letters that create spelling confusion (e.g. "toolly", "apppe")
