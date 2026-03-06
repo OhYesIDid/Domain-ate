@@ -1878,7 +1878,10 @@
         const aAvail = availability[a.name + a.tld];
         const bAvail = availability[b.name + b.tld];
         const rank = v => v === true ? 0 : v === false ? 2 : 1;
-        return rank(aAvail) - rank(bAvail);
+        const availDiff = rank(aAvail) - rank(bAvail);
+        if (availDiff !== 0) return availDiff;
+        // Within the same availability group, sort by domain score descending
+        return computeDomainScore(b, availability).score - computeDomainScore(a, availability).score;
       });
     }
 
