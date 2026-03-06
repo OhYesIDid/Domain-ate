@@ -1207,10 +1207,12 @@
             <p class="cta-subheading">See how the AI consultant works</p>
 
             <label class="demo-label" for="businessDescription">Describe your business:</label>
-            <textarea 
-              id="businessDescription" 
+            <textarea
+              id="businessDescription"
               class="demo-textarea"
               placeholder="e.g., A sustainable fashion marketplace for Gen Z consumers"
+              onfocus="if(this.value===this.defaultValue)this.value=''"
+              onblur="if(this.value==='')this.value=this.defaultValue"
             >A sustainable fashion marketplace for Gen Z consumers</textarea>
             
             <button class="cta-button" onclick="startBrainstorming()">
