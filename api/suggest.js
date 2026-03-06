@@ -6,7 +6,6 @@ const FREE_LIMIT = 5;
 
 // ── Clerk JWT verification ──────────────────────────────────────────────────
 
-// Cache JWKS per issuer so we don't fetch on every request
 const jwksCache = {};
 
 async function getJwksForIssuer(iss) {
@@ -14,7 +13,6 @@ async function getJwksForIssuer(iss) {
   if (jwksCache[iss] && now - jwksCache[iss].at < 3_600_000) {
     return jwksCache[iss].keys;
   }
-  // Derive JWKS URL from the token's own issuer claim — no env var needed
   const jwksUrl = `${iss}/.well-known/jwks.json`;
   const res = await fetch(jwksUrl);
   if (!res.ok) throw new Error(`JWKS fetch failed: ${res.status}`);
@@ -30,11 +28,9 @@ async function verifyClerkToken(token) {
     const header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString());
     const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
 
-    // Basic claim checks
     if (payload.exp * 1000 < Date.now()) return null;
     if (!payload.iss) return null;
 
-    // Fetch the public keys from the token's own issuer
     const keys = await getJwksForIssuer(payload.iss);
     const jwk  = keys.find(k => k.kid === header.kid);
     if (!jwk) return null;
@@ -47,7 +43,7 @@ async function verifyClerkToken(token) {
       Buffer.from(parts[2], 'base64url')
     );
     if (!valid) return null;
-    return payload; // { sub: userId, publicMetadata: { plan } ... }
+    return payload;
   } catch (err) {
     console.warn('verifyClerkToken error:', err.message);
     return null;
@@ -57,7 +53,7 @@ async function verifyClerkToken(token) {
 // ── Upstash Redis helpers ───────────────────────────────────────────────────
 
 function usageKey(userId) {
-  const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const month = new Date().toISOString().slice(0, 7);
   return `usage:${userId}:${month}`;
 }
 
@@ -76,7 +72,6 @@ async function incrementUsage(userId) {
     `${process.env.UPSTASH_REDIS_REST_URL}/incr/${key}`,
     { headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` } }
   );
-  // Auto-expire after ~35 days so keys clean themselves up
   await fetch(
     `${process.env.UPSTASH_REDIS_REST_URL}/expire/${key}/3024000`,
     { headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` } }
@@ -111,8 +106,6 @@ export default async function handler(req, res) {
   const plan   = payload.metadata?.plan || payload.publicMetadata?.plan || 'free';
 
   // ── Usage check (free plan only) ────────────────────────────────────────
-  // Wrapped in try/catch so a missing/misconfigured Upstash doesn't crash the
-  // whole function — it just skips the limit check and logs a warning.
   if (plan !== 'pro') {
     try {
       const usage = await getUsage(userId);
@@ -137,39 +130,93 @@ export default async function handler(req, res) {
   const geo      = answers?.geo      || 'global';
   const audience = answers?.audience || 'both';
 
-  const geoLabel = {
-    global: 'a global audience', us: 'the United States market',
-    europe: 'the European market', asia: 'the Asia-Pacific market',
-  }[geo] || 'a global audience';
+  // Geo → explicit TLD rules
+  const tldRules = {
+    global:
+      'Include at least 4 .com suggestions — they carry universal trust. ' +
+      'The remaining 6 can use .io, .app, .co, .ai, or .co — choose whichever best fits each name.',
+    us:
+      'Include at least 5 .com suggestions — US audiences strongly equate .com with credibility. ' +
+      'The remaining 5 can use .io, .app, or .co.',
+    europe:
+      'Include at least 3 .com suggestions for global reach. ' +
+      'You may also suggest .eu or .co.uk options to signal European presence. ' +
+      'Remaining slots can use .io, .app, or .co.',
+    asia:
+      'Include at least 3 .com suggestions — still the most trusted TLD in Asia-Pacific. ' +
+      'You may also suggest .asia or .co for regional relevance. ' +
+      'Remaining slots can use .io or .app.',
+  }[geo] || 'Include at least 4 .com suggestions. Remaining can use .io, .app, .co, or .ai.';
 
-  const audienceLabel = {
-    b2b: 'businesses (B2B)', b2c: 'consumers (B2C)',
-    genz: 'Gen Z / young consumers', both: 'a mixed audience',
-  }[audience] || 'a mixed audience';
+  // Audience → explicit tone and style rules
+  const audienceTone = {
+    b2b:
+      'Tone: professional and authoritative. Names must convey reliability, expertise, and trustworthiness. ' +
+      'Avoid slang, playful misspellings, juvenile abbreviations, or anything that sounds casual or consumer-facing.',
+    b2c:
+      'Tone: energetic and approachable. Emotional and lifestyle-oriented names work well. ' +
+      'Colloquial language is acceptable. Focus on how the name makes a customer feel.',
+    genz:
+      'Tone: internet-native and bold. Embrace neologisms, unexpected spellings, abbreviations, and ironic or playful language. ' +
+      'Avoid corporate-sounding, formal, or overly polished names. Irreverent works well.',
+    both:
+      'Tone: balance professionalism with approachability. ' +
+      'Names must feel credible in a formal pitch deck AND welcoming on a consumer-facing homepage.',
+  }[audience] || 'Tone: balance professionalism with approachability.';
 
-  const prompt = `You are a world-class domain name consultant. Generate exactly 10 creative domain name suggestions for the following business.
+  // ── System prompt: persona only ─────────────────────────────────────────
+  const systemPrompt =
+    'You are a world-class domain name consultant with 15 years of experience ' +
+    'helping startups and established businesses secure memorable, brandable domain names. ' +
+    'You understand linguistics, brand psychology, and how domain choices affect conversion and recall. ' +
+    'You only ever respond with raw JSON — never markdown, code fences, or any surrounding text.';
 
-Business description: ${description}
-Target geography: ${geoLabel}
-Target audience: ${audienceLabel}
+  // ── User message: task + rules + data ──────────────────────────────────
+  const userMessage = `Generate exactly 10 domain name suggestions for this business.
 
-Requirements for each suggestion:
-- The domain name must be 6–20 characters long (not counting the TLD)
-- It must be memorable, easy to spell, and easy to say out loud
-- Use a variety of TLDs: include at least 3 .com suggestions, and mix in .io, .app, .co, .xyz, .ai, .store, or other relevant TLDs
-- Classify each as one of three styles: "brandable" (invented word, like Spotify), "keyword" (descriptive, like Booking.com), or "hybrid" (mix of both, like Pinterest)
-- Provide a 1-line rationale (max 12 words) explaining why this name fits the business
+BUSINESS DETAILS
+Description: ${description}
+Target market: ${({ global: 'Global (worldwide)', us: 'United States', europe: 'Europe', asia: 'Asia-Pacific' })[geo] || 'Global'}
+Target audience: ${({ b2b: 'Businesses (B2B)', b2c: 'Consumers (B2C)', genz: 'Gen Z / young consumers', both: 'Mixed (B2B + B2C)' })[audience] || 'Mixed'}
 
-You MUST respond with a valid JSON array and nothing else — no markdown, no explanation, no code fences. The array must contain exactly 10 objects in this format:
+AUDIENCE TONE
+${audienceTone}
 
+TLD RULES FOR THIS MARKET
+${tldRules}
+
+STYLE DISTRIBUTION (must be exact)
+Return exactly:
+- 4 brandable suggestions (invented or abstract words — like Spotify, Slack, Notion)
+- 3 keyword suggestions (descriptive, literal meaning — like Basecamp, Booking.com, Mailchimp)
+- 3 hybrid suggestions (blend of brand + keyword — like Pinterest, Dropbox, YouTube)
+
+NAMING REQUIREMENTS
+- 6–20 characters (not counting the TLD)
+- Memorable and easy to spell after hearing it spoken once
+- One obvious way to write it — no ambiguous spellings
+- No hyphens, no numbers
+
+AVOID (exclude any name that matches these)
+- Generic pairings of two common words (e.g. "QuickShop", "BestTools", "FastBuy")
+- Double letters that create spelling confusion (e.g. "toolly", "apppe")
+- Names that closely resemble an existing well-known brand or product
+- Names that require cultural or linguistic knowledge to pronounce correctly
+
+QUALITY CHECK — apply before including each name
+1. Could a native English speaker spell this correctly after hearing it once?
+2. Does it clearly avoid sounding like an existing major brand?
+3. Is the rationale specific to THIS business — not generic praise like "catchy" or "memorable"?
+Remove any name that fails any of the three checks.
+
+EXAMPLES OF THE REQUIRED FORMAT
 [
-  {
-    "name": "threadwise",
-    "tld": ".com",
-    "rationale": "Implies smart, curated fashion choices for modern buyers",
-    "style": "brandable"
-  }
-]`;
+  { "name": "threadwise", "tld": ".com", "style": "brandable", "rationale": "Implies curated fashion intelligence for trend-aware modern buyers" },
+  { "name": "fastbooking", "tld": ".io", "style": "keyword", "rationale": "Direct, action-driven name built for a B2B scheduling platform" },
+  { "name": "snaplaunch", "tld": ".app", "style": "hybrid", "rationale": "Conveys speed and simplicity for a product launch management tool" }
+]
+
+Respond with a valid JSON array of exactly 10 objects. Each object must have: name (string), tld (string starting with .), style (brandable | keyword | hybrid), rationale (max 15 words). No other text.`;
 
   // ── Call Anthropic ──────────────────────────────────────────────────────
   try {
@@ -181,9 +228,10 @@ You MUST respond with a valid JSON array and nothing else — no markdown, no ex
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
+        model: 'claude-sonnet-4-5-20251029',
+        max_tokens: 1500,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
       }),
     });
 
