@@ -683,11 +683,16 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 20px;
-      transition: all 0.25s;
+      transition: border-color 0.25s, box-shadow 0.25s, opacity 0.35s ease, transform 0.35s ease;
       display: flex;
       flex-direction: column;
       gap: 10px;
       min-width: 0; /* grid items default to min-width:auto which causes overflow */
+    }
+    /* Entrance animation — class removed via rAF after append */
+    .card-entering {
+      opacity: 0;
+      transform: translateY(14px);
     }
     .domain-card:hover {
       border-color: var(--border-bright);
@@ -1635,45 +1640,99 @@
       await runConsultation(token);
     }
 
-    // Core engine: fires API immediately, races animated messages against real
-    // latency so the animation only runs as long as it needs to, then shows results.
+    // Core engine: starts SSE stream, shows thinking messages while waiting for
+    // the first domain, then transitions to results and streams cards one by one.
     async function runConsultation(token) {
       const description = document.getElementById('businessDescription').value;
 
-      // Fire the real API call right now — don't await yet
-      const apiPromise = fetchSuggestions(description, answers, token);
+      // Fetch pricing + exchange rate upfront for all common TLDs so cards
+      // can show prices the moment they appear — no extra wait after streaming.
+      userCurrency = detectUserCurrency();
+      const commonTlds = ['.com','.io','.app','.co','.ai','.dev','.store','.xyz','.me','.net','.org','.tech','.shop','.eu'];
+      const [prices, rate] = await Promise.all([
+        fetchDomainPrices(commonTlds),
+        fetchExchangeRate(userCurrency),
+      ]);
+      userRate  = rate;
+      lastPrices = prices;
+      lastPremiumPrices = {};
 
-      // Track settlement without throwing so we can race safely
-      let apiSettled = false;
-      let apiResult  = null;
-      let apiError   = null;
-      const tracked  = apiPromise
-        .then(r => { apiResult = r; apiSettled = true; })
-        .catch(e => { apiError  = e; apiSettled = true; });
+      // Reset state for this consultation
+      lastSuggestions  = [];
+      lastAvailability = {};
+      activeFilter     = 'all';
 
-      // Show thinking messages while we wait — break early if API finishes first
+      // Thinking messages shown while Claude is working
       const thinkingMsgs = [
-        [600,  '🧠', 'Consulting my domain expertise...',          55],
-        [1400, '✨', 'Brainstorming creative name combinations...', 64],
-        [1400, '🎨', 'Testing word patterns and phonetics...',      73],
-        [1200, '🔍', 'Checking brand clarity and memorability...',  82],
-        [1000, '📝', 'Finalising your personalised suggestions...',  91],
+        [700,  '🧠', 'Consulting my domain expertise...'],
+        [2000, '✨', 'Brainstorming creative name combinations...'],
+        [2500, '🎨', 'Testing word patterns and phonetics...'],
+        [2500, '🔍', 'Checking brand clarity and memorability...'],
+        [2000, '🔎', 'Verifying real-time availability...'],
       ];
 
-      for (const [delay, emoji, text, progress] of thinkingMsgs) {
-        if (apiSettled) break;
-        await wait(delay);
-        if (apiSettled) break;
-        addMessage('thinking', emoji, text);
-        updateProgress(progress);
+      let firstDomainReceived = false;
+      let thinkingDone = false;
+
+      // Run thinking animation concurrently with the stream
+      const thinkingLoop = (async () => {
+        let progress = 55;
+        for (const [delay, emoji, text] of thinkingMsgs) {
+          if (firstDomainReceived) break;
+          await wait(delay);
+          if (firstDomainReceived) break;
+          addMessage('thinking', emoji, text);
+          progress = Math.min(progress + 8, 88);
+          updateProgress(progress);
+        }
+        thinkingDone = true;
+      })();
+
+      // Prepare results section (hidden until first domain)
+      const desc        = description.trim();
+      const descPreview = desc.length > 50 ? desc.slice(0, 47) + '...' : desc;
+      document.getElementById('resultsSubheading').textContent =
+        `Finding available domains for "${descPreview}"...`;
+      document.getElementById('availabilitySummary').innerHTML =
+        `<strong>0</strong> of 10 domains found`;
+      document.querySelectorAll('.filter-pill').forEach((p, i) => p.classList.toggle('active', i === 0));
+      document.getElementById('domainsGrid').innerHTML = '';
+
+      let streamError = null;
+      let totalFound  = 0;
+
+      try {
+        await streamSuggestions(description, answers, token, (domain, count) => {
+          // First domain received — transition from thinking to results
+          if (!firstDomainReceived) {
+            firstDomainReceived = true;
+            updateProgress(100);
+            document.getElementById('thinkingStage').classList.remove('active');
+            const resultsEl = document.getElementById('resultsStage');
+            resultsEl.classList.add('active');
+            resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+
+          // Add to state
+          lastSuggestions.push(domain);
+          lastAvailability[domain.name + domain.tld] = true;
+          totalFound = count;
+
+          // Update live counter
+          document.getElementById('availabilitySummary').innerHTML =
+            `<strong>${count}</strong> of 10 domains found`;
+
+          // Append card with entrance animation
+          appendDomainCard(domain);
+        });
+      } catch (err) {
+        streamError = err;
       }
 
-      // Ensure settled before reading result/error
-      await tracked;
-
-      if (apiError) {
-        if (apiError.status === 402) {
+      if (streamError) {
+        if (streamError.status === 402) {
           document.getElementById('thinkingStage').classList.remove('active');
+          document.getElementById('resultsStage').classList.remove('active');
           showUpgradeModal();
           return;
         }
@@ -1681,24 +1740,17 @@
         return;
       }
 
-      updateProgress(100);
-      addMessage('acknowledgment', '✓', '✨ Got your suggestions! Checking availability...');
-      await wait(400);
+      // All domains received — finalise display
+      document.getElementById('resultsSubheading').textContent =
+        `${totalFound} personalised suggestions for "${descPreview}"`;
+      document.getElementById('availabilitySummary').innerHTML =
+        `<strong>${totalFound}</strong> of ${totalFound} domains available`;
 
-      // Fetch availability, prices and exchange rate in parallel
-      const domainList = apiResult.map(s => s.name + s.tld);
-      const tldList    = [...new Set(apiResult.map(s => s.tld))];
-      userCurrency     = detectUserCurrency();
-      const [availData, prices, rate] = await Promise.all([
-        checkDomainAvailability(domainList),
-        fetchDomainPrices(tldList),
-        fetchExchangeRate(userCurrency),
-      ]);
-      userRate = rate;
-
-      addMessage('acknowledgment', '', '✨ Here are your domains!');
-      await wait(400);
-      showResults(apiResult, availData.results, prices, availData.premiumPrices);
+      // Sort cards by score and re-render
+      lastSuggestions = [...lastSuggestions].sort((a, b) =>
+        computeDomainScore(b, lastAvailability).score - computeDomainScore(a, lastAvailability).score
+      );
+      renderDomainCards(lastSuggestions, lastAvailability);
     }
 
     // ── Domain Score ───────────────────────────────────────────────────────────
@@ -1758,7 +1810,9 @@
 
     // ── API helpers ────────────────────────────────────────────────────────────
 
-    async function fetchSuggestions(description, answersObj, token = null) {
+    // SSE-based streaming: calls onDomain for each confirmed-available domain
+    // as Claude finds it. Returns total count when stream ends.
+    async function streamSuggestions(description, answersObj, token, onDomain) {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch('/api/suggest', {
@@ -1772,8 +1826,40 @@
         error.status = res.status;
         throw error;
       }
-      const data = await res.json();
-      return data.suggestions;
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let   buffer  = '';
+      let   count   = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep incomplete line for next chunk
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const json = line.slice(6).trim();
+          if (!json) continue;
+          try {
+            const event = JSON.parse(json);
+            if (event.type === 'domain') {
+              count++;
+              onDomain(event.domain, count);
+            } else if (event.type === 'error') {
+              const error = new Error(event.message || 'Stream error');
+              error.status = event.status || 500;
+              throw error;
+            }
+          } catch (e) {
+            // Re-throw real errors; ignore JSON parse noise
+            if (e.status || (e.message && !e.message.includes('JSON'))) throw e;
+          }
+        }
+      }
+      return count;
     }
 
     async function checkDomainAvailability(domains) {
@@ -1875,17 +1961,68 @@
     // ── Render results ─────────────────────────────────────────────────────────
 
     function sortSuggestions(suggestions, availability) {
-      return [...suggestions].sort((a, b) => {
-        const aAvail = availability[a.name + a.tld];
-        const bAvail = availability[b.name + b.tld];
-        const rank = v => v === true ? 0 : v === false ? 2 : 1;
-        const availDiff = rank(aAvail) - rank(bAvail);
-        if (availDiff !== 0) return availDiff;
-        // Within the same availability group, sort by domain score descending
-        return computeDomainScore(b, availability).score - computeDomainScore(a, availability).score;
-      });
+      // All streaming domains are confirmed available — sort by score only
+      return [...suggestions].sort((a, b) =>
+        computeDomainScore(b, availability).score - computeDomainScore(a, availability).score
+      );
     }
 
+    // Build the inner HTML for a single domain card.
+    // Called both during streaming (one card at a time) and during re-renders.
+    function buildCardHTML(s, availability) {
+      const fullDomain  = s.name + s.tld;
+      const avail       = availability[fullDomain];
+      const availClass  = avail === false ? 'taken' : avail === true ? 'available' : 'unknown';
+      const availLabel  = avail === false ? '✗ Taken' : avail === true ? '✓ Available' : '? Unknown';
+      const registerUrl = `https://www.namecheap.com/domains/registration/results/?domain=${encodeURIComponent(fullDomain)}`;
+      const whoisUrl    = `https://www.whois.com/whois/${encodeURIComponent(fullDomain)}`;
+      const namechkUrl  = `https://namechk.com/${encodeURIComponent(s.name)}`;
+      const premiumUsd  = lastPremiumPrices[fullDomain];
+      const stdPrice    = lastPrices[s.tld];
+      const isPremium   = premiumUsd != null;
+      const ctaPrice    = isPremium
+        ? `${compactPrice(premiumUsd, userRate, userCurrency)}/yr ⭐`
+        : stdPrice != null ? `~${compactPrice(stdPrice, userRate, userCurrency)}/yr` : null;
+      const registerLabel = ctaPrice ? `Register for ${ctaPrice}` : 'Register on Namecheap →';
+      const checkLabel    = ctaPrice ? `Check availability → ${ctaPrice}` : 'Check availability →';
+
+      return `
+        <div class="domain-card-header">
+          <div class="domain-name">
+            <span>${escapeHtml(s.name)}<span class="tld">${escapeHtml(s.tld)}</span></span>
+            <button class="copy-btn" onclick="copyDomain('${escapeHtml(fullDomain)}', this)" title="Copy domain name">⎘</button>
+          </div>
+          ${renderScorePill(s, availability)}
+        </div>
+        <div class="domain-badges">
+          <span class="badge style-badge ${s.style}">${capitalise(s.style)}</span>
+          <span class="badge avail-badge ${availClass}">${availLabel}</span>
+        </div>
+        <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
+        <div class="domain-meta">
+          <a href="${namechkUrl}" target="_blank" rel="noopener" class="social-link">@ Handles →</a>
+        </div>
+        ${avail === true
+          ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">${registerLabel}</a>`
+          : avail === false
+          ? ''
+          : `<a class="check-link" href="${whoisUrl}" target="_blank" rel="noopener">${checkLabel}</a>`}
+      `;
+    }
+
+    // Append a single card to the grid with an entrance animation.
+    // Called during streaming as each confirmed-available domain arrives.
+    function appendDomainCard(s) {
+      const grid = document.getElementById('domainsGrid');
+      const div  = document.createElement('div');
+      div.className = 'domain-card card-entering';
+      div.innerHTML = buildCardHTML(s, lastAvailability);
+      grid.appendChild(div);
+      // Double rAF ensures the browser has painted the entering state
+      requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('card-entering')));
+    }
+
+    // Full re-render of the grid (used for filter changes and post-stream sort).
     function renderDomainCards(suggestions, availability) {
       const grid = document.getElementById('domainsGrid');
 
@@ -1901,80 +2038,28 @@
         return;
       }
 
-      grid.innerHTML = filtered.map(s => {
-        const fullDomain = s.name + s.tld;
-        const avail = availability[fullDomain];
-        let availClass, availLabel;
-        if (avail === true)       { availClass = 'available'; availLabel = '✓ Available'; }
-        else if (avail === false) { availClass = 'taken';     availLabel = '✗ Taken'; }
-        else                      { availClass = 'unknown';   availLabel = '? Unknown'; }
-
-        const registerUrl = `https://www.namecheap.com/domains/registration/results/?domain=${encodeURIComponent(fullDomain)}`;
-        const whoisUrl    = `https://www.whois.com/whois/${encodeURIComponent(fullDomain)}`;
-        const namechkUrl  = `https://namechk.com/${encodeURIComponent(s.name)}`;
-
-        const premiumUsd = lastPremiumPrices[fullDomain];
-        const stdPrice   = lastPrices[s.tld];
-        const isPremium  = premiumUsd != null;
-
-        // Compact price string for CTA label — uses narrow symbol ($, £, €), no decimals
-        const ctaPrice = isPremium
-          ? `${compactPrice(premiumUsd, userRate, userCurrency)}/yr ⭐`
-          : stdPrice != null
-            ? `~${compactPrice(stdPrice, userRate, userCurrency)}/yr`
-            : null;
-
-        const registerLabel = ctaPrice ? `Register for ${ctaPrice}` : 'Register on Namecheap →';
-        const checkLabel    = ctaPrice ? `Check availability → ${ctaPrice}` : 'Check availability →';
-
-        return `
-          <div class="domain-card ${avail === false ? 'taken' : ''}">
-            <div class="domain-card-header">
-              <div class="domain-name">
-                <span>${escapeHtml(s.name)}<span class="tld">${escapeHtml(s.tld)}</span></span>
-                <button class="copy-btn" onclick="copyDomain('${escapeHtml(fullDomain)}', this)" title="Copy domain name">⎘</button>
-              </div>
-              ${renderScorePill(s, availability)}
-            </div>
-            <div class="domain-badges">
-              <span class="badge style-badge ${s.style}">${capitalise(s.style)}</span>
-              <span class="badge avail-badge ${availClass}">${availLabel}</span>
-            </div>
-            <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
-            <div class="domain-meta">
-              <a href="${namechkUrl}" target="_blank" rel="noopener" class="social-link">@ Handles →</a>
-            </div>
-            ${avail === true
-              ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">${registerLabel}</a>`
-              : avail === false
-              ? ''
-              : `<a class="check-link" href="${whoisUrl}" target="_blank" rel="noopener">${checkLabel}</a>`}
-          </div>
-        `;
-      }).join('');
+      grid.innerHTML = filtered.map(s =>
+        `<div class="domain-card ${availability[s.name + s.tld] === false ? 'taken' : ''}">${buildCardHTML(s, availability)}</div>`
+      ).join('');
     }
 
     function showResults(suggestions, availability, prices = {}, premiumPrices = {}) {
       document.getElementById('thinkingStage').classList.remove('active');
 
-      lastSuggestions = sortSuggestions(suggestions, availability);
+      lastSuggestions  = [...suggestions].sort((a, b) =>
+        computeDomainScore(b, availability).score - computeDomainScore(a, availability).score);
       lastAvailability = availability;
-      lastPrices = prices;
+      lastPrices       = prices;
       lastPremiumPrices = premiumPrices;
-      activeFilter = 'all';
+      activeFilter     = 'all';
 
-      // Reset filter pills
-      document.querySelectorAll('.filter-pill').forEach((p, i) => {
-        p.classList.toggle('active', i === 0);
-      });
+      document.querySelectorAll('.filter-pill').forEach((p, i) => p.classList.toggle('active', i === 0));
 
-      // Dynamic subheading with user's description
-      const desc = document.getElementById('businessDescription').value.trim();
+      const desc        = document.getElementById('businessDescription').value.trim();
       const descPreview = desc.length > 50 ? desc.slice(0, 47) + '...' : desc;
       document.getElementById('resultsSubheading').textContent =
-        `10 personalised suggestions for "${descPreview}"`;
+        `${suggestions.length} personalised suggestions for "${descPreview}"`;
 
-      // Availability summary
       const availableCount = suggestions.filter(s => availability[s.name + s.tld] === true).length;
       document.getElementById('availabilitySummary').innerHTML =
         `<strong>${availableCount}</strong> of ${suggestions.length} domains available`;
@@ -2008,43 +2093,71 @@
       document.getElementById('resultsStage').classList.remove('active');
       document.getElementById('thinkingStage').classList.add('active');
 
-      addMessage('thinking', '', 'Generating fresh suggestions...');
-      updateProgress(78);
+      addMessage('thinking', '🔄', 'Finding fresh available domains...');
+      updateProgress(50);
 
-      const token = clerk?.user ? await clerk.session.getToken() : null;
+      const token       = clerk?.user ? await clerk.session.getToken() : null;
       const description = document.getElementById('businessDescription').value;
-      let suggestions;
+
+      // Reset state
+      lastSuggestions   = [];
+      lastAvailability  = {};
+      lastPremiumPrices = {};
+      activeFilter      = 'all';
+
+      // Prepare the results grid
+      document.getElementById('domainsGrid').innerHTML = '';
+      document.querySelectorAll('.filter-pill').forEach((p, i) => p.classList.toggle('active', i === 0));
+      const desc        = description.trim();
+      const descPreview = desc.length > 50 ? desc.slice(0, 47) + '...' : desc;
+      document.getElementById('availabilitySummary').innerHTML = `<strong>0</strong> of 10 domains found`;
+
+      let firstDomain = false;
+      let totalFound  = 0;
+      let streamError = null;
+
       try {
-        suggestions = await fetchSuggestions(description, answers, token);
+        await streamSuggestions(description, answers, token, (domain, count) => {
+          if (!firstDomain) {
+            firstDomain = true;
+            updateProgress(100);
+            document.getElementById('thinkingStage').classList.remove('active');
+            const resultsEl = document.getElementById('resultsStage');
+            resultsEl.classList.add('active');
+            resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+          lastSuggestions.push(domain);
+          lastAvailability[domain.name + domain.tld] = true;
+          totalFound = count;
+          document.getElementById('availabilitySummary').innerHTML =
+            `<strong>${count}</strong> of 10 domains found`;
+          appendDomainCard(domain);
+        });
       } catch (err) {
-        if (err.status === 402) {
+        streamError = err;
+      }
+
+      if (streamError) {
+        if (streamError.status === 402) {
           document.getElementById('thinkingStage').classList.remove('active');
+          document.getElementById('resultsStage').classList.remove('active');
           showUpgradeModal();
           return;
         }
-        showResultsError('AI suggestions are unavailable right now. Please try again in a moment.');
+        showResultsError('Failed to generate fresh suggestions. Please try again.');
         return;
       }
 
-      addMessage('thinking', '', 'Checking availability and prices...');
-      updateProgress(90);
+      document.getElementById('resultsSubheading').textContent =
+        `${totalFound} personalised suggestions for "${descPreview}"`;
+      document.getElementById('availabilitySummary').innerHTML =
+        `<strong>${totalFound}</strong> of ${totalFound} domains available`;
 
-      const domainList = suggestions.map(s => s.name + s.tld);
-      const tldList = [...new Set(suggestions.map(s => s.tld))];
-      userCurrency = detectUserCurrency();
-      const [availData, prices, rate] = await Promise.all([
-        checkDomainAvailability(domainList),
-        fetchDomainPrices(tldList),
-        fetchExchangeRate(userCurrency),
-      ]);
-      userRate = rate;
-      const availability = availData.results;
-      const premiumPrices = availData.premiumPrices;
-
-      updateProgress(100);
-      addMessage('acknowledgment', '', 'Fresh suggestions ready!');
-      await wait(600);
-      showResults(suggestions, availability, prices, premiumPrices);
+      // Final sort by score
+      lastSuggestions = [...lastSuggestions].sort((a, b) =>
+        computeDomainScore(b, lastAvailability).score - computeDomainScore(a, lastAvailability).score
+      );
+      renderDomainCards(lastSuggestions, lastAvailability);
     }
 
     function showResultsError(message) {
