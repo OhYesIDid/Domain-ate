@@ -699,10 +699,18 @@
       font-size: 22px;
       font-weight: 500;
       color: var(--text-primary);
-      word-break: break-all;
       display: flex;
       align-items: center;
       gap: 4px;
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+    .domain-name > span:first-child {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
     }
     .domain-name .tld {
       color: var(--accent-light);
@@ -742,17 +750,44 @@
     }
 
     .register-link {
-      display: inline-block;
+      display: block;
       font-size: 13px;
       font-weight: 600;
-      color: var(--accent-light);
+      color: #6ee7b7;
       text-decoration: none;
-      padding: 6px 0;
-      transition: color 0.2s;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3);
+      text-align: center;
+      transition: all 0.2s;
       font-family: 'DM Mono', monospace;
+      margin-top: 4px;
     }
-    .register-link:hover { color: #fff; }
-    .register-link.hidden-link { display: none; }
+    .register-link:hover {
+      background: rgba(16,185,129,0.2);
+      border-color: rgba(16,185,129,0.5);
+      color: #a7f3d0;
+    }
+    .check-link {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid var(--border);
+      text-align: center;
+      transition: all 0.2s;
+      font-family: 'DM Mono', monospace;
+      margin-top: 4px;
+    }
+    .check-link:hover {
+      border-color: var(--border-bright);
+      color: var(--text-secondary);
+    }
 
     .start-over-btn {
       width: 100%;
@@ -1204,7 +1239,7 @@
           <div class="input-wrapper">
             <div class="results-header">
               <h2>Your Domain Suggestions</h2>
-              <p id="resultsSubheading">10 personalized recommendations, availability checked</p>
+              <p id="resultsSubheading"></p>
             </div>
 
             <div id="availabilitySummary" class="availability-summary"></div>
@@ -1229,7 +1264,7 @@
 
       <div class="trust-signals">
         <div class="trust-item">AI Consultant</div>
-        <div class="trust-item">12 Second Results</div>
+        <div class="trust-item">Instant Results</div>
         <div class="trust-item">Privacy Focused</div>
         <div class="trust-item">Early Bird Perks</div>
       </div>
@@ -1892,7 +1927,7 @@
               ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">Register on Namecheap →</a>`
               : avail === false
               ? ''
-              : `<a class="register-link" href="${whoisUrl}" target="_blank" rel="noopener">Check manually →</a>`}
+              : `<a class="check-link" href="${whoisUrl}" target="_blank" rel="noopener">Check availability →</a>`}
           </div>
         `;
       }).join('');
@@ -1911,6 +1946,12 @@
       document.querySelectorAll('.filter-pill').forEach((p, i) => {
         p.classList.toggle('active', i === 0);
       });
+
+      // Dynamic subheading with user's description
+      const desc = document.getElementById('businessDescription').value.trim();
+      const descPreview = desc.length > 50 ? desc.slice(0, 47) + '...' : desc;
+      document.getElementById('resultsSubheading').textContent =
+        `10 personalised suggestions for "${descPreview}"`;
 
       // Availability summary
       const availableCount = suggestions.filter(s => availability[s.name + s.tld] === true).length;
