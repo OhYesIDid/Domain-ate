@@ -1146,7 +1146,7 @@
       </h1>
       
       <p class="hero-subtitle">
-        Skip the boring forms. Our AI consultant asks smart questions while brainstorming your perfect domain. Get personalized results in 12 seconds.
+        Skip the boring forms. Our AI consultant asks smart questions while brainstorming your perfect domain. Get personalised results in seconds.
       </p>
 
       <!-- INTERACTIVE DEMO SECTION -->
@@ -1259,7 +1259,7 @@
         <div class="feature-card">
           <div class="feature-number">03</div>
           <h3>Get Perfect Domains</h3>
-          <p>15 personalized suggestions in 12 seconds. Available, memorable, and SEO-friendly.</p>
+          <p>10 personalised domain suggestions. Available, memorable, and SEO-friendly.</p>
         </div>
       </div>
     </div>
@@ -1526,130 +1526,115 @@
     }
 
     async function simulateThinkingProcess() {
-      await wait(500);
+      await wait(400);
       addMessage('thinking', '📖', 'Reading your business concept...');
-      updateProgress(10);
-
-      await wait(1500);
-      addMessage('thinking', '💭', 'Hmm, sustainable fashion for Gen-Z... interesting!');
-      updateProgress(20);
-
-      await wait(1000);
-      addMessage('thinking', '🤔', 'Let me think about this market...');
+      updateProgress(15);
+      await wait(900);
+      addMessage('thinking', '💭', 'Interesting! Two quick questions to personalise your results...');
       updateProgress(25);
-
-      await wait(1000);
+      await wait(500);
 
       currentQuestion = {
         id: 'geo',
         text: 'Where will you primarily operate?',
         options: [
-          { value: 'global', label: 'Global', emoji: '🌍' },
-          { value: 'us', label: 'United States', emoji: '🇺🇸' },
-          { value: 'europe', label: 'Europe', emoji: '🇪🇺' },
-          { value: 'asia', label: 'Asia Pacific', emoji: '🌏' },
+          { value: 'global', label: 'Global',        emoji: '🌍' },
+          { value: 'us',     label: 'United States', emoji: '🇺🇸' },
+          { value: 'europe', label: 'Europe',         emoji: '🇪🇺' },
+          { value: 'asia',   label: 'Asia Pacific',   emoji: '🌏' },
         ],
-        timeout: 7000,
+        timeout: 8000,
         skipDefault: 'global',
       };
       renderQuestion(currentQuestion);
     }
 
     async function continueAfterFirstQuestion(answer) {
-      const labels = {
-        global: 'Global',
-        us: 'United States',
-        europe: 'Europe',
-        asia: 'Asia Pacific'
-      };
-      
-      await wait(500);
-      addMessage('acknowledgment', '✓', `Perfect! ${labels[answer]}. Let me incorporate that...`);
-      updateProgress(40);
-
-      await wait(1500);
-      addMessage('thinking', '✨', 'Brainstorming creative name ideas...');
-      updateProgress(50);
-
-      await wait(1500);
-      addMessage('thinking', '🎨', 'Testing word combinations and syllables...');
-      updateProgress(60);
-
-      await wait(1000);
+      const labels = { global: 'Global', us: 'United States', europe: 'Europe', asia: 'Asia Pacific' };
+      addMessage('acknowledgment', '✓', `${labels[answer]}. One more thing...`);
+      updateProgress(38);
+      await wait(400);
 
       currentQuestion = {
         id: 'audience',
         text: "Who's your main customer?",
         options: [
-          { value: 'b2b', label: 'Businesses (B2B)', emoji: '👔' },
-          { value: 'b2c', label: 'Consumers (B2C)', emoji: '👥' },
-          { value: 'genz', label: 'Gen Z / Young', emoji: '🎯' },
-          { value: 'both', label: 'Not sure yet', emoji: '🤷' },
+          { value: 'b2b',  label: 'Businesses (B2B)', emoji: '👔' },
+          { value: 'b2c',  label: 'Consumers (B2C)',  emoji: '👥' },
+          { value: 'genz', label: 'Gen Z / Young',    emoji: '🎯' },
+          { value: 'both', label: 'Not sure yet',     emoji: '🤷' },
         ],
-        timeout: 5000,
+        timeout: 6000,
         skipDefault: 'both',
       };
       renderQuestion(currentQuestion);
     }
 
     async function continueAfterSecondQuestion(answer) {
-      const labels = {
-        b2b: 'B2B businesses',
-        b2c: 'B2C consumers',
-        genz: 'Gen Z',
-        both: 'mixed audience'
-      };
-
+      const labels = { b2b: 'B2B', b2c: 'B2C', genz: 'Gen Z', both: 'mixed audience' };
       clearQuestion();
-      await wait(500);
-      addMessage('acknowledgment', '✓', `Got it! Targeting ${labels[answer]}...`);
-      updateProgress(70);
+      addMessage('acknowledgment', '✓', `Targeting ${labels[answer]}. On it...`);
+      updateProgress(48);
+      await wait(300);
 
-      await wait(800);
-      addMessage('thinking', '', 'Generating your personalised suggestions...');
-      updateProgress(80);
-
-      await wait(1500);
-      addMessage('thinking', '', 'Brainstorming creative combinations...');
-      updateProgress(88);
-
-      await wait(1500);
-      addMessage('thinking', '', 'Finalising your results...');
-      updateProgress(96);
-
-      await wait(800);
-      updateProgress(100);
-      addMessage('acknowledgment', '', '✨ Your domains are ready!');
-      await wait(600);
-
-      // Gate: check auth before showing results
-      await handlePostAnimation();
-    }
-
-    async function handlePostAnimation() {
+      // Auth check — must be logged in before we fire the API
       if (!clerk || !clerk.user) {
-        // Save state in case OAuth causes a page redirect
         sessionStorage.setItem('pendingDescription', document.getElementById('businessDescription').value);
         sessionStorage.setItem('pendingAnswers', JSON.stringify(answers));
         showAuthGate();
         return;
       }
+
       const token = await clerk.session.getToken();
-      await fetchAndShowResults(token);
+      await runConsultation(token);
     }
 
+    // OAuth return / auth-gate path — thin wrapper so the post-login handler
+    // can call back in without duplicating logic.
     async function fetchAndShowResults(token) {
-      // Make sure thinkingStage is visible while we fetch
       document.getElementById('authGate').classList.remove('active');
       document.getElementById('thinkingStage').classList.add('active');
-      addMessage('thinking', '', 'Loading your suggestions...');
+      await runConsultation(token);
+    }
 
+    // Core engine: fires API immediately, races animated messages against real
+    // latency so the animation only runs as long as it needs to, then shows results.
+    async function runConsultation(token) {
       const description = document.getElementById('businessDescription').value;
-      let suggestions;
-      try {
-        suggestions = await fetchSuggestions(description, answers, token);
-      } catch (err) {
-        if (err.status === 402) {
+
+      // Fire the real API call right now — don't await yet
+      const apiPromise = fetchSuggestions(description, answers, token);
+
+      // Track settlement without throwing so we can race safely
+      let apiSettled = false;
+      let apiResult  = null;
+      let apiError   = null;
+      const tracked  = apiPromise
+        .then(r => { apiResult = r; apiSettled = true; })
+        .catch(e => { apiError  = e; apiSettled = true; });
+
+      // Show thinking messages while we wait — break early if API finishes first
+      const thinkingMsgs = [
+        [600,  '🧠', 'Consulting my domain expertise...',          55],
+        [1400, '✨', 'Brainstorming creative name combinations...', 64],
+        [1400, '🎨', 'Testing word patterns and phonetics...',      73],
+        [1200, '🔍', 'Checking brand clarity and memorability...',  82],
+        [1000, '📝', 'Finalising your personalised suggestions...',  91],
+      ];
+
+      for (const [delay, emoji, text, progress] of thinkingMsgs) {
+        if (apiSettled) break;
+        await wait(delay);
+        if (apiSettled) break;
+        addMessage('thinking', emoji, text);
+        updateProgress(progress);
+      }
+
+      // Ensure settled before reading result/error
+      await tracked;
+
+      if (apiError) {
+        if (apiError.status === 402) {
           document.getElementById('thinkingStage').classList.remove('active');
           showUpgradeModal();
           return;
@@ -1658,23 +1643,24 @@
         return;
       }
 
-      addMessage('thinking', '', 'Checking availability and prices...');
+      updateProgress(100);
+      addMessage('acknowledgment', '✓', '✨ Got your suggestions! Checking availability...');
+      await wait(400);
 
-      const domainList = suggestions.map(s => s.name + s.tld);
-      const tldList = [...new Set(suggestions.map(s => s.tld))];
-      userCurrency = detectUserCurrency();
+      // Fetch availability, prices and exchange rate in parallel
+      const domainList = apiResult.map(s => s.name + s.tld);
+      const tldList    = [...new Set(apiResult.map(s => s.tld))];
+      userCurrency     = detectUserCurrency();
       const [availData, prices, rate] = await Promise.all([
         checkDomainAvailability(domainList),
         fetchDomainPrices(tldList),
         fetchExchangeRate(userCurrency),
       ]);
       userRate = rate;
-      const availability = availData.results;
-      const premiumPrices = availData.premiumPrices;
 
       addMessage('acknowledgment', '', '✨ Here are your domains!');
-      await wait(600);
-      showResults(suggestions, availability, prices, premiumPrices);
+      await wait(400);
+      showResults(apiResult, availData.results, prices, availData.premiumPrices);
     }
 
     // ── Domain Score ───────────────────────────────────────────────────────────
