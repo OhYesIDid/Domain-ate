@@ -1530,7 +1530,9 @@
       addMessage('thinking', '📖', 'Reading your business concept...');
       updateProgress(15);
       await wait(900);
-      addMessage('thinking', '💭', 'Interesting! Two quick questions to personalise your results...');
+      const rawDesc = document.getElementById('businessDescription').value.trim();
+      const preview = rawDesc.length > 55 ? rawDesc.slice(0, 52) + '...' : rawDesc;
+      addMessage('thinking', '💭', `Got it — "${preview}". Two quick questions to tailor your results...`);
       updateProgress(25);
       await wait(500);
 
