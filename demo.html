@@ -159,7 +159,7 @@
     }
 
     .hero h1 {
-      font-size: 64px;
+      font-size: clamp(36px, 6vw, 64px);
       font-weight: 800;
       margin-bottom: 24px;
       line-height: 1.1;
@@ -173,14 +173,15 @@
     }
 
     .hero-subtitle {
-      font-size: 20px;
+      font-size: 18px;
       color: var(--text-secondary);
       margin-bottom: 48px;
-      max-width: 700px;
+      max-width: 600px;
       margin-left: auto;
       margin-right: auto;
-      font-family: 'DM Mono', monospace;
+      font-family: Inter, system-ui, sans-serif;
       font-weight: 400;
+      line-height: 1.6;
     }
 
     .cta-section {
@@ -215,7 +216,7 @@
       color: var(--text-secondary);
       margin-bottom: 32px;
       text-align: center;
-      font-family: 'DM Mono', monospace;
+      font-family: Inter, system-ui, sans-serif;
     }
 
     .cta-button {
@@ -240,8 +241,8 @@
     .cta-hint {
       text-align: center;
       font-size: 13px;
+      font-family: Inter, system-ui, sans-serif;
       color: var(--text-muted);
-      font-family: 'DM Mono', monospace;
     }
 
     /* Demo-specific styles */
@@ -658,17 +659,13 @@
 
     .results-header {
       text-align: center;
-      margin-bottom: 32px;
-    }
-    .results-header h2 {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 8px;
+      margin-bottom: 24px;
     }
     .results-header p {
-      font-size: 14px;
-      color: var(--text-muted);
-      font-family: 'DM Mono', monospace;
+      font-size: 16px;
+      font-family: Inter, system-ui, sans-serif;
+      font-weight: 500;
+      color: var(--text-secondary);
     }
 
     .domains-grid {
@@ -688,6 +685,7 @@
       flex-direction: column;
       gap: 10px;
       min-width: 0; /* grid items default to min-width:auto which causes overflow */
+      text-align: left;
     }
     /* Entrance animation — class removed via rAF after append */
     .card-entering {
@@ -702,7 +700,7 @@
 
     .domain-name {
       font-family: 'DM Mono', monospace;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 500;
       color: var(--text-primary);
       display: flex;
@@ -710,12 +708,10 @@
       gap: 4px;
       min-width: 0;
       flex: 1;
-      overflow: hidden;
     }
+    /* Name + TLD are an unbreakable unit — never ellipse the TLD */
     .domain-name > span:first-child {
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       min-width: 0;
     }
     .domain-name .tld {
@@ -750,8 +746,8 @@
     .domain-rationale {
       font-size: 13px;
       color: var(--text-muted);
-      font-family: 'DM Mono', monospace;
-      line-height: 1.5;
+      font-family: Inter, system-ui, sans-serif;
+      line-height: 1.55;
       flex: 1;
     }
 
@@ -825,14 +821,14 @@
     /* ── Availability summary ─────────────────────────────────── */
     .availability-summary {
       text-align: center;
-      margin-bottom: 16px;
-      font-family: 'DM Mono', monospace;
-      font-size: 14px;
+      margin-bottom: 20px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 13px;
       color: var(--text-muted);
     }
     .availability-summary strong {
       color: var(--success);
-      font-size: 18px;
+      font-size: 16px;
     }
 
     /* ── Filter bar ───────────────────────────────────────────── */
@@ -1128,11 +1124,24 @@
     .price-val { color: var(--text-secondary); }
     .price-val.premium-price { color: #f59e0b; }
     .social-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 500;
       color: var(--text-muted);
       text-decoration: none;
-      transition: color 0.2s;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      transition: all 0.2s;
     }
-    .social-link:hover { color: var(--accent-light); }
+    .social-link:hover {
+      color: var(--accent-light);
+      border-color: var(--accent);
+      background: rgba(99,102,241,0.08);
+    }
 
     @media (max-width: 768px) {
       .results-actions { grid-template-columns: 1fr; }
@@ -1244,7 +1253,6 @@
         <div id="resultsStage" class="results-container">
           <div class="input-wrapper">
             <div class="results-header">
-              <h2>Your Domain Suggestions</h2>
               <p id="resultsSubheading"></p>
             </div>
 
@@ -1252,7 +1260,6 @@
 
             <div class="filter-bar">
               <button class="filter-pill active" onclick="filterResults('all', this)">All</button>
-              <button class="filter-pill" onclick="filterResults('available', this)">Available</button>
               <button class="filter-pill" onclick="filterResults('brandable', this)">Brandable</button>
               <button class="filter-pill" onclick="filterResults('keyword', this)">Keyword</button>
               <button class="filter-pill" onclick="filterResults('hybrid', this)">Hybrid</button>
@@ -1805,7 +1812,7 @@
       const rows = breakdown.map(r =>
         `<div class="score-tooltip-row"><span>${r.label}</span><span>${r.pts}/${r.max}</span></div>`
       ).join('');
-      return `<span class="score-pill ${cls}">${score}<span style="font-size:10px;opacity:0.6">/100</span><div class="score-tooltip"><div class="score-tooltip-title">Domain Score: ${score}/100</div>${rows}</div></span>`;
+      return `<span class="score-pill ${cls}" title="Domain Score — hover to see breakdown"><span style="font-size:9px;opacity:0.65;margin-right:2px">SCORE</span>${score}<span style="font-size:9px;opacity:0.5">/100</span><div class="score-tooltip"><div class="score-tooltip-title">Domain Score: ${score}/100</div>${rows}</div></span>`;
     }
 
     // ── API helpers ────────────────────────────────────────────────────────────
@@ -1980,27 +1987,33 @@
       const premiumUsd  = lastPremiumPrices[fullDomain];
       const stdPrice    = lastPrices[s.tld];
       const isPremium   = premiumUsd != null;
+      const priceLoaded = stdPrice != null || isPremium;
       const ctaPrice    = isPremium
         ? `${compactPrice(premiumUsd, userRate, userCurrency)}/yr ⭐`
         : stdPrice != null ? `~${compactPrice(stdPrice, userRate, userCurrency)}/yr` : null;
-      const registerLabel = ctaPrice ? `Register for ${ctaPrice}` : 'Register on Namecheap →';
-      const checkLabel    = ctaPrice ? `Check availability → ${ctaPrice}` : 'Check availability →';
+
+      // CTA label: show price when available, skeleton dots while loading
+      const registerLabel = ctaPrice
+        ? `Register for ${ctaPrice}`
+        : priceLoaded ? 'Register on Namecheap →' : 'Register on Namecheap →';
+      const checkLabel = ctaPrice
+        ? `Check availability → ${ctaPrice}`
+        : 'Check availability →';
 
       return `
         <div class="domain-card-header">
           <div class="domain-name">
             <span>${escapeHtml(s.name)}<span class="tld">${escapeHtml(s.tld)}</span></span>
-            <button class="copy-btn" onclick="copyDomain('${escapeHtml(fullDomain)}', this)" title="Copy domain name">⎘</button>
+            <button class="copy-btn" onclick="copyDomain('${escapeHtml(fullDomain)}', this)" title="Copy to clipboard">⎘</button>
           </div>
           ${renderScorePill(s, availability)}
         </div>
         <div class="domain-badges">
           <span class="badge style-badge ${s.style}">${capitalise(s.style)}</span>
-          <span class="badge avail-badge ${availClass}">${availLabel}</span>
         </div>
         <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
         <div class="domain-meta">
-          <a href="${namechkUrl}" target="_blank" rel="noopener" class="social-link">@ Handles →</a>
+          <a href="${namechkUrl}" target="_blank" rel="noopener" class="social-link">@ Social handles</a>
         </div>
         ${avail === true
           ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">${registerLabel}</a>`
