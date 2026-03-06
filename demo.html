@@ -750,7 +750,10 @@
     }
 
     .register-link {
-      display: block;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
       font-size: 13px;
       font-weight: 600;
       color: #6ee7b7;
@@ -759,7 +762,6 @@
       border-radius: 8px;
       background: rgba(16,185,129,0.1);
       border: 1px solid rgba(16,185,129,0.3);
-      text-align: center;
       transition: all 0.2s;
       font-family: 'DM Mono', monospace;
       margin-top: 4px;
@@ -770,7 +772,10 @@
       color: #a7f3d0;
     }
     .check-link {
-      display: block;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
       font-size: 13px;
       font-weight: 500;
       color: var(--text-muted);
@@ -779,7 +784,6 @@
       border-radius: 8px;
       background: transparent;
       border: 1px solid var(--border);
-      text-align: center;
       transition: all 0.2s;
       font-family: 'DM Mono', monospace;
       margin-top: 4px;
@@ -788,6 +792,13 @@
       border-color: var(--border-bright);
       color: var(--text-secondary);
     }
+    .cta-price {
+      font-size: 11px;
+      font-weight: 400;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
+    .cta-price.premium { color: #f59e0b; opacity: 1; }
 
     .start-over-btn {
       width: 100%;
@@ -1899,11 +1910,15 @@
 
         const premiumUsd = lastPremiumPrices[fullDomain];
         const stdPrice   = lastPrices[s.tld];
-        const priceHtml  = premiumUsd != null
-          ? `<span class="domain-price"><span class="price-val premium-price" title="Premium domain — registry-set price">${formatPrice(premiumUsd, userRate, userCurrency)}/yr ⭐</span></span>`
+        const isPremium  = premiumUsd != null;
+        const priceLabel = isPremium
+          ? `${formatPrice(premiumUsd, userRate, userCurrency)}/yr ⭐`
           : stdPrice != null
-            ? `<span class="domain-price"><span class="price-val" title="Estimated standard registration rate">~${formatPrice(stdPrice, userRate, userCurrency)}/yr</span></span>`
+            ? `~${formatPrice(stdPrice, userRate, userCurrency)}/yr`
             : '';
+        const priceBadge = priceLabel
+          ? `<span class="cta-price${isPremium ? ' premium' : ''}">${priceLabel}</span>`
+          : '';
 
         return `
           <div class="domain-card ${avail === false ? 'taken' : ''}">
@@ -1920,14 +1935,13 @@
             </div>
             <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
             <div class="domain-meta">
-              ${priceHtml}
               <a href="${namechkUrl}" target="_blank" rel="noopener" class="social-link">@ Handles →</a>
             </div>
             ${avail === true
-              ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">Register on Namecheap →</a>`
+              ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener"><span>Register on Namecheap →</span>${priceBadge}</a>`
               : avail === false
               ? ''
-              : `<a class="check-link" href="${whoisUrl}" target="_blank" rel="noopener">Check availability →</a>`}
+              : `<a class="check-link" href="${whoisUrl}" target="_blank" rel="noopener"><span>Check availability →</span>${priceBadge}</a>`}
           </div>
         `;
       }).join('');
