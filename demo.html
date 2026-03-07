@@ -1910,8 +1910,10 @@
 
       const reader  = res.body.getReader();
       const decoder = new TextDecoder();
-      let   buffer  = '';
-      let   count   = 0;
+      let   buffer        = '';
+      let   count         = 0;
+      let   lastDomainAt  = 0;
+      const MIN_GAP_MS    = 350; // ensure thinking card is always visible between cards
 
       while (true) {
         const { done, value } = await reader.read();
@@ -1927,7 +1929,11 @@
           try {
             const event = JSON.parse(json);
             if (event.type === 'domain') {
+              // Enforce a minimum gap so the thinking card is always visible
+              const wait = MIN_GAP_MS - (Date.now() - lastDomainAt);
+              if (lastDomainAt && wait > 0) await new Promise(r => setTimeout(r, wait));
               count++;
+              lastDomainAt = Date.now();
               onDomain(event.domain, count);
             } else if (event.type === 'searching') {
               if (onSearching) onSearching(event.submitted, event.remaining);
