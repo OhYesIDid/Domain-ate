@@ -285,13 +285,13 @@
     .status-message {
       display: flex;
       align-items: center;
-      gap: 18px;
+      gap: 14px;
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 24px 28px;
-      margin-bottom: 24px;
-      min-height: 80px;
+      padding: 14px 18px;
+      margin-bottom: 14px;
+      min-height: 52px;
       opacity: 0;
     }
 
@@ -370,76 +370,69 @@
     }
 
     .question-card {
-      background: var(--bg-secondary);
-      border: 2px solid var(--border-bright);
-      border-radius: 16px;
-      padding: 32px;
-      margin-bottom: 24px;
-      box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+      border-top: 1px solid var(--border);
+      padding: 14px 0 4px;
+      margin-bottom: 12px;
     }
 
-    .question-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .question-emoji {
-      font-size: 48px;
-    }
-
-    .question-text h3 {
-      font-size: 24px;
-      margin-bottom: 8px;
-    }
-
-    .question-text p {
-      color: var(--text-secondary);
-      font-size: 18px;
+    .question-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
       font-family: 'DM Mono', monospace;
+      margin-bottom: 5px;
+    }
+
+    .question-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 10px;
     }
 
     .options {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
     }
 
     .option-button {
-      background: transparent;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
+      background: rgba(99, 102, 241, 0.06);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 7px 14px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      gap: 12px;
+      gap: 6px;
+      white-space: nowrap;
     }
 
     .option-button:hover {
       border-color: var(--accent);
-      background: rgba(99, 102, 241, 0.1);
-      transform: scale(1.03);
+      background: rgba(99, 102, 241, 0.15);
+      transform: translateY(-1px);
     }
 
     .option-emoji {
-      font-size: 40px;
+      font-size: 15px;
     }
 
     .option-label {
       font-weight: 600;
-      font-size: 16px;
+      font-size: 13px;
       color: var(--text-primary);
     }
 
     .question-footer {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 16px;
     }
 
     .skip-button {
@@ -1205,7 +1198,7 @@
       .input-wrapper { padding: 32px 24px; }
       .comparison-grid { grid-template-columns: 1fr; }
       .trust-signals { gap: 20px; }
-      .options { grid-template-columns: 1fr; }
+      .options { gap: 6px; }
       .domains-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -1275,8 +1268,7 @@
 
         <div id="thinkingStage" class="thinking-container">
           <div class="input-wrapper">
-            <h2 class="cta-heading">AI Thinking Process</h2>
-            <p class="cta-subheading mono" id="businessDesc"></p>
+            <p class="cta-subheading mono" id="businessDesc" style="margin-bottom:16px;"></p>
 
             <div class="status-message" id="statusMessage">
               <div class="status-indicator" id="statusIndicator"></div>
@@ -1555,28 +1547,19 @@
       const container = document.getElementById('questionContainer');
       container.innerHTML = `
         <div class="question-card">
-          <div class="question-header">
-            <div class="question-emoji">🤔</div>
-            <div class="question-text">
-              <h3>Quick question to refine:</h3>
-              <p>${question.text}</p>
-            </div>
-          </div>
-          
+          <p class="question-label">Quick question</p>
+          <p class="question-text">${question.text}</p>
           <div class="options">
             ${question.options.map(opt => `
               <button class="option-button" onclick="handleAnswer('${question.id}', '${opt.value}')">
-                <div class="option-emoji">${opt.emoji}</div>
-                <div class="option-label">${opt.label}</div>
+                <span class="option-emoji">${opt.emoji}</span>
+                <span class="option-label">${opt.label}</span>
               </button>
             `).join('')}
           </div>
-          
           <div class="question-footer">
-            <button class="skip-button" onclick="handleSkip('${question.id}')">⏭️ Skip</button>
-            <div class="timer">
-              <span>Auto-continuing in <span id="timeLeft">${question.timeout / 1000}</span>s...</span>
-            </div>
+            <button class="skip-button" onclick="handleSkip('${question.id}')">Skip →</button>
+            <div class="timer"><span id="timeLeft">${question.timeout / 1000}</span>s</div>
           </div>
         </div>
       `;
