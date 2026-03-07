@@ -874,6 +874,45 @@
     }
     .searching-indicator.active { display: flex; }
 
+    /* ── Skeleton / thinking card ───────────────────────────── */
+    .domain-card-skeleton {
+      position: relative;
+      overflow: hidden;
+    }
+    .domain-card-skeleton::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(99, 102, 241, 0.07) 50%,
+        transparent 100%
+      );
+      animation: shimmer 1.8s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .skeleton-line {
+      background: rgba(99, 102, 241, 0.12);
+      border-radius: 6px;
+      animation: skeletonPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes skeletonPulse {
+      0%, 100% { opacity: 0.35; }
+      50%       { opacity: 0.7; }
+    }
+    .skeleton-domain { height: 22px; width: 55%; }
+    .skeleton-score  { height: 22px; width: 42px; border-radius: 20px; }
+    .skeleton-badge  { height: 20px; width: 80px; border-radius: 6px; }
+    .skeleton-text   { height: 13px; }
+    .skeleton-text.w-full { width: 100%; }
+    .skeleton-text.w-4-5  { width: 82%; }
+    .skeleton-text.w-3-5  { width: 62%; }
+    .skeleton-btn    { height: 38px; width: 100%; border-radius: 10px; margin-top: 4px; }
+
     /* ── Taken card dim ──────────────────────────────────────── */
     .domain-card.taken {
       opacity: 0.35;
@@ -1742,6 +1781,9 @@
           // Hide the searching indicator when a new domain arrives
           document.getElementById('searchingIndicator').classList.remove('active');
 
+          // Remove skeleton thinking card before appending the real one
+          removeThinkingCard();
+
           // Add to state
           lastSuggestions.push(domain);
           lastAvailability[domain.name + domain.tld] = true;
@@ -1753,6 +1795,9 @@
 
           // Append card with entrance animation
           appendDomainCard(domain);
+
+          // Show skeleton card while waiting for the next domain
+          if (count < 10) showThinkingCard();
         }, (submitted, remaining) => {
           // Show searching indicator while Claude is nudged to find more
           document.getElementById('searchingText').textContent =
@@ -1776,6 +1821,7 @@
 
       // All domains received — finalise display
       document.getElementById('searchingIndicator').classList.remove('active');
+      removeThinkingCard();
       document.getElementById('resultsSubheading').textContent =
         `${totalFound} personalised suggestions for "${descPreview}"`;
       document.getElementById('availabilitySummary').innerHTML =
@@ -2065,6 +2111,35 @@
       requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('card-entering')));
     }
 
+    // Show a skeleton placeholder card in the grid while the next domain is being generated.
+    function showThinkingCard() {
+      removeThinkingCard();
+      const grid = document.getElementById('domainsGrid');
+      const div  = document.createElement('div');
+      div.id        = 'thinkingCard';
+      div.className = 'domain-card domain-card-skeleton card-entering';
+      div.innerHTML = `
+        <div class="domain-card-header">
+          <div class="skeleton-line skeleton-domain"></div>
+          <div class="skeleton-line skeleton-score"></div>
+        </div>
+        <div><div class="skeleton-line skeleton-badge"></div></div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+          <div class="skeleton-line skeleton-text w-full"></div>
+          <div class="skeleton-line skeleton-text w-4-5"></div>
+          <div class="skeleton-line skeleton-text w-3-5"></div>
+        </div>
+        <div class="skeleton-line skeleton-btn"></div>
+      `;
+      grid.appendChild(div);
+      requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('card-entering')));
+    }
+
+    function removeThinkingCard() {
+      const card = document.getElementById('thinkingCard');
+      if (card) card.remove();
+    }
+
     // Full re-render of the grid (used for filter changes and post-stream sort).
     function renderDomainCards(suggestions, availability) {
       const grid = document.getElementById('domainsGrid');
@@ -2170,12 +2245,14 @@
             resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
           document.getElementById('searchingIndicator').classList.remove('active');
+          removeThinkingCard();
           lastSuggestions.push(domain);
           lastAvailability[domain.name + domain.tld] = true;
           totalFound = count;
           document.getElementById('availabilitySummary').innerHTML =
             `<strong>${count}</strong> of 10 domains found`;
           appendDomainCard(domain);
+          if (count < 10) showThinkingCard();
         }, (submitted, remaining) => {
           document.getElementById('searchingText').textContent =
             `Found ${submitted} so far — searching for ${remaining} more…`;
@@ -2197,6 +2274,7 @@
       }
 
       document.getElementById('searchingIndicator').classList.remove('active');
+      removeThinkingCard();
       document.getElementById('resultsSubheading').textContent =
         `${totalFound} personalised suggestions for "${descPreview}"`;
       document.getElementById('availabilitySummary').innerHTML =
