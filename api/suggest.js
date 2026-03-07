@@ -438,6 +438,7 @@ export default async function handler(req, res) {
           role: 'user',
           content: `You've submitted ${submitted} of ${TARGET} required domains. Please continue and find ${TARGET - submitted} more available domains.`,
         });
+        send({ type: 'searching', submitted, remaining: TARGET - submitted });
         continue;
       }
 

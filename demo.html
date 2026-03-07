@@ -860,6 +860,20 @@
       color: var(--accent-light);
     }
 
+    /* ── Searching indicator ────────────────────────────────── */
+    .searching-indicator {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 0 8px;
+      color: var(--text-muted);
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 13px;
+      grid-column: 1 / -1;
+    }
+    .searching-indicator.active { display: flex; }
+
     /* ── Taken card dim ──────────────────────────────────────── */
     .domain-card.taken {
       opacity: 0.35;
@@ -1268,6 +1282,11 @@
             </div>
 
             <div id="domainsGrid" class="domains-grid"></div>
+
+            <div id="searchingIndicator" class="searching-indicator">
+              <div class="thinking-dots"><span></span><span></span><span></span></div>
+              <span id="searchingText">Finding more domains…</span>
+            </div>
 
             <div class="results-actions">
               <button class="regenerate-btn" onclick="regenerateSuggestions()">↻ Regenerate</button>
@@ -1722,6 +1741,9 @@
             resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
 
+          // Hide the searching indicator when a new domain arrives
+          document.getElementById('searchingIndicator').classList.remove('active');
+
           // Add to state
           lastSuggestions.push(domain);
           lastAvailability[domain.name + domain.tld] = true;
@@ -1733,6 +1755,11 @@
 
           // Append card with entrance animation
           appendDomainCard(domain);
+        }, (submitted, remaining) => {
+          // Show searching indicator while Claude is nudged to find more
+          document.getElementById('searchingText').textContent =
+            `Found ${submitted} so far — searching for ${remaining} more…`;
+          document.getElementById('searchingIndicator').classList.add('active');
         });
       } catch (err) {
         streamError = err;
@@ -1750,6 +1777,7 @@
       }
 
       // All domains received — finalise display
+      document.getElementById('searchingIndicator').classList.remove('active');
       document.getElementById('resultsSubheading').textContent =
         `${totalFound} personalised suggestions for "${descPreview}"`;
       document.getElementById('availabilitySummary').innerHTML =
@@ -1821,7 +1849,7 @@
 
     // SSE-based streaming: calls onDomain for each confirmed-available domain
     // as Claude finds it. Returns total count when stream ends.
-    async function streamSuggestions(description, answersObj, token, onDomain) {
+    async function streamSuggestions(description, answersObj, token, onDomain, onSearching) {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch('/api/suggest', {
@@ -1857,6 +1885,8 @@
             if (event.type === 'domain') {
               count++;
               onDomain(event.domain, count);
+            } else if (event.type === 'searching') {
+              if (onSearching) onSearching(event.submitted, event.remaining);
             } else if (event.type === 'error') {
               const error = new Error(event.message || 'Stream error');
               error.status = event.status || 500;
@@ -2141,12 +2171,17 @@
             resultsEl.classList.add('active');
             resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
+          document.getElementById('searchingIndicator').classList.remove('active');
           lastSuggestions.push(domain);
           lastAvailability[domain.name + domain.tld] = true;
           totalFound = count;
           document.getElementById('availabilitySummary').innerHTML =
             `<strong>${count}</strong> of 10 domains found`;
           appendDomainCard(domain);
+        }, (submitted, remaining) => {
+          document.getElementById('searchingText').textContent =
+            `Found ${submitted} so far — searching for ${remaining} more…`;
+          document.getElementById('searchingIndicator').classList.add('active');
         });
       } catch (err) {
         streamError = err;
@@ -2163,6 +2198,7 @@
         return;
       }
 
+      document.getElementById('searchingIndicator').classList.remove('active');
       document.getElementById('resultsSubheading').textContent =
         `${totalFound} personalised suggestions for "${descPreview}"`;
       document.getElementById('availabilitySummary').innerHTML =
