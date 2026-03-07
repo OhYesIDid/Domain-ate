@@ -407,7 +407,9 @@ export default async function handler(req, res) {
   const seenNames = []; // names that passed quality gate — used for diversity enforcement
 
   try {
-    while (submitted < TARGET && checksUsed < MAX_CHECKS) {
+    let turns = 0;
+    while (submitted < TARGET && checksUsed < MAX_CHECKS && turns < 20) {
+      turns++;
       const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -429,7 +431,15 @@ export default async function handler(req, res) {
 
       messages.push({ role: 'assistant', content: data.content });
 
-      if (data.stop_reason === 'end_turn') break;
+      if (data.stop_reason === 'end_turn') {
+        if (submitted >= TARGET) break;
+        // Claude stopped early — nudge it to continue
+        messages.push({
+          role: 'user',
+          content: `You've submitted ${submitted} of ${TARGET} required domains. Please continue and find ${TARGET - submitted} more available domains.`,
+        });
+        continue;
+      }
 
       if (data.stop_reason === 'tool_use') {
         const blocks      = data.content.filter(b => b.type === 'tool_use');
