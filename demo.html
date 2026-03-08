@@ -1603,14 +1603,14 @@
 
     async function startBrainstorming() {
       const description = document.getElementById('businessDescription').value;
+
       document.getElementById('businessDesc').textContent = description;
-      
       document.getElementById('inputStage').classList.add('hidden');
       document.getElementById('thinkingStage').classList.add('active');
-      
+
       messages = [];
       answers = {};
-      
+
       await simulateThinkingProcess();
     }
 
@@ -2317,45 +2317,15 @@
       pendingAuth = true;
 
       const container = document.getElementById('clerk-auth-container');
-      const clerkAppearance = {
-        variables: {
-          colorPrimary:          '#6366f1',
-          colorBackground:       '#0f1624',
-          colorText:             '#f1f5f9',
-          colorTextSecondary:    '#cbd5e1',
-          colorInputBackground:  '#080c14',
-          colorInputText:        '#f1f5f9',
-          colorNeutral:          '#cbd5e1',
-          borderRadius:          '10px',
-          fontFamily:            'Inter, system-ui, sans-serif',
-          fontFamilyButtons:     'Inter, system-ui, sans-serif',
-          fontSize:              '14px',
-        },
-        elements: {
-          card:                     'background: rgba(15,22,36,0.95); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);',
-          headerTitle:              'font-size: 20px; font-weight: 700; font-family: Syne, sans-serif;',
-          socialButtonsBlockButton: 'background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3);',
-          socialButtonsBlockButtonText: 'color: #f1f5f9;',
-        },
-      };
 
       if (clerk) {
-        try {
-          clerk.mountSignIn(container, {
-            forceRedirectUrl: window.location.origin + '/demo.html',
-            appearance: clerkAppearance,
+        // UI components are not available in this Clerk CDN build —
+        // use redirect-based sign-in instead (confirmed to work)
+        window._authFallback = () => {
+          clerk.redirectToSignIn({
+            redirectUrl: window.location.origin + '/demo.html',
           });
-          return;
-        } catch (err) {
-          console.warn('mountSignIn failed, falling back to openSignIn:', err);
-        }
-
-        // mountSignIn threw — fall back to modal popup via named function
-        // (inline onclick can't access script-scoped `let clerk`)
-        window._authFallback = () => clerk.openSignIn({
-          forceRedirectUrl: window.location.origin + '/demo.html',
-          appearance: clerkAppearance,
-        });
+        };
         container.innerHTML = `
           <button onclick="_authFallback()"
                   style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;padding:16px 40px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:0 8px 24px rgba(99,102,241,0.35);transition:all 0.2s;"
@@ -2428,37 +2398,45 @@
           // Use pendingAuth flag OR sessionStorage as fallback (covers soft reloads)
           const hasPending = pendingAuth || !!sessionStorage.getItem('pendingDescription');
           if (user && hasPending) {
-            // Restore saved state if needed (soft reload case)
             const savedDesc    = sessionStorage.getItem('pendingDescription');
             const savedAnswers = sessionStorage.getItem('pendingAnswers');
-            if (savedDesc && savedAnswers) {
-              answers = JSON.parse(savedAnswers);
+            sessionStorage.removeItem('pendingDescription');
+            sessionStorage.removeItem('pendingAnswers');
+
+            if (savedDesc) {
               document.getElementById('businessDescription').value = savedDesc;
               document.getElementById('businessDesc').textContent  = savedDesc;
             }
-            sessionStorage.removeItem('pendingDescription');
-            sessionStorage.removeItem('pendingAnswers');
+
             hideAuthGate();
-            const token = await clerk.session.getToken();
-            await fetchAndShowResults(token);
+
+            if (savedAnswers) {
+              answers = JSON.parse(savedAnswers);
+              const token = await clerk.session.getToken();
+              await fetchAndShowResults(token);
+            }
           }
         });
 
         // Check if user logged in via OAuth redirect and has pending results
         if (clerk.user) {
           const desc = sessionStorage.getItem('pendingDescription');
-          const savedAnswers = sessionStorage.getItem('pendingAnswers');
-          if (desc && savedAnswers) {
+          if (desc) {
+            const savedAnswers = sessionStorage.getItem('pendingAnswers');
             sessionStorage.removeItem('pendingDescription');
             sessionStorage.removeItem('pendingAnswers');
-            answers = JSON.parse(savedAnswers);
+
             document.getElementById('businessDescription').value = desc;
-            document.getElementById('businessDesc').textContent = desc;
+            document.getElementById('businessDesc').textContent  = desc;
             document.getElementById('inputStage').classList.add('hidden');
             document.getElementById('thinkingStage').classList.add('active');
-            addMessage('acknowledgment', '', '✨ Welcome back! Loading your results...');
-            const token = await clerk.session.getToken();
-            await fetchAndShowResults(token);
+
+            if (savedAnswers) {
+              answers = JSON.parse(savedAnswers);
+              addMessage('acknowledgment', '', '✨ Welcome back! Loading your results...');
+              const token = await clerk.session.getToken();
+              await fetchAndShowResults(token);
+            }
           }
         }
       } catch (err) {
