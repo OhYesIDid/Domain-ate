@@ -2350,14 +2350,18 @@
           console.warn('mountSignIn failed, falling back to openSignIn:', err);
         }
 
-        // mountSignIn threw — fall back to modal popup triggered by a button
+        // mountSignIn threw — fall back to modal popup via named function
+        // (inline onclick can't access script-scoped `let clerk`)
+        window._authFallback = () => clerk.openSignIn({
+          forceRedirectUrl: window.location.origin + '/demo.html',
+          appearance: clerkAppearance,
+        });
         container.innerHTML = `
-          <button onclick="clerk.openSignIn({ forceRedirectUrl: window.location.origin + '/demo.html', appearance: window._clerkAppearance })"
+          <button onclick="_authFallback()"
                   style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;padding:16px 40px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:0 8px 24px rgba(99,102,241,0.35);transition:all 0.2s;"
                   onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
             Sign in to continue →
           </button>`;
-        window._clerkAppearance = clerkAppearance;
       } else {
         // Clerk failed to load entirely — offer a page reload
         container.innerHTML = `
