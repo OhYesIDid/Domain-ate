@@ -2316,32 +2316,58 @@
       document.getElementById('authGate').classList.add('active');
       pendingAuth = true;
 
-      // Mount Clerk's SignIn component inside the auth gate
+      const container = document.getElementById('clerk-auth-container');
+      const clerkAppearance = {
+        variables: {
+          colorPrimary:          '#6366f1',
+          colorBackground:       '#0f1624',
+          colorText:             '#f1f5f9',
+          colorTextSecondary:    '#cbd5e1',
+          colorInputBackground:  '#080c14',
+          colorInputText:        '#f1f5f9',
+          colorNeutral:          '#cbd5e1',
+          borderRadius:          '10px',
+          fontFamily:            'Inter, system-ui, sans-serif',
+          fontFamilyButtons:     'Inter, system-ui, sans-serif',
+          fontSize:              '14px',
+        },
+        elements: {
+          card:                     'background: rgba(15,22,36,0.95); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);',
+          headerTitle:              'font-size: 20px; font-weight: 700; font-family: Syne, sans-serif;',
+          socialButtonsBlockButton: 'background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3);',
+          socialButtonsBlockButtonText: 'color: #f1f5f9;',
+        },
+      };
+
       if (clerk) {
-        clerk.mountSignIn(document.getElementById('clerk-auth-container'), {
-          forceRedirectUrl: window.location.origin + '/demo.html',
-          appearance: {
-            variables: {
-              colorPrimary:          '#6366f1',
-              colorBackground:       '#0f1624',
-              colorText:             '#f1f5f9',
-              colorTextSecondary:    '#cbd5e1',
-              colorInputBackground:  '#080c14',
-              colorInputText:        '#f1f5f9',
-              colorNeutral:          '#cbd5e1',
-              borderRadius:          '10px',
-              fontFamily:            'Inter, system-ui, sans-serif',
-              fontFamilyButtons:     'Inter, system-ui, sans-serif',
-              fontSize:              '14px',
-            },
-            elements: {
-              card:                     'background: rgba(15,22,36,0.95); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);',
-              headerTitle:              'font-size: 20px; font-weight: 700; font-family: Syne, sans-serif;',
-              socialButtonsBlockButton: 'background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3);',
-              socialButtonsBlockButtonText: 'color: #f1f5f9;',
-            },
-          },
-        });
+        try {
+          clerk.mountSignIn(container, {
+            forceRedirectUrl: window.location.origin + '/demo.html',
+            appearance: clerkAppearance,
+          });
+          return;
+        } catch (err) {
+          console.warn('mountSignIn failed, falling back to openSignIn:', err);
+        }
+
+        // mountSignIn threw — fall back to modal popup triggered by a button
+        container.innerHTML = `
+          <button onclick="clerk.openSignIn({ forceRedirectUrl: window.location.origin + '/demo.html', appearance: window._clerkAppearance })"
+                  style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;padding:16px 40px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:0 8px 24px rgba(99,102,241,0.35);transition:all 0.2s;"
+                  onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+            Sign in to continue →
+          </button>`;
+        window._clerkAppearance = clerkAppearance;
+      } else {
+        // Clerk failed to load entirely — offer a page reload
+        container.innerHTML = `
+          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-secondary);text-align:center;">
+            <p style="margin-bottom:16px;">Sign-in couldn't load.<br>This is usually caused by an ad-blocker or network issue.</p>
+            <button onclick="window.location.reload()"
+                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;">
+              Reload &amp; try again
+            </button>
+          </div>`;
       }
     }
 
