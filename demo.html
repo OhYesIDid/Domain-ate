@@ -2450,6 +2450,12 @@
       setTimeout(() => alert('🎉 Welcome to Pro! Your account has been upgraded.'), 500);
     }
 
+    // If we're returning from an auth redirect, hide the input stage immediately
+    // (before the async clerk.load() resolves) so it never flashes on screen.
+    if (sessionStorage.getItem('pendingDescription')) {
+      document.getElementById('inputStage').classList.add('hidden');
+    }
+
     // Init Clerk when DOM is ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initClerk);
