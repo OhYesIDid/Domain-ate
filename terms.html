@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service | Domain-ate</title>
+  <meta name="description" content="Terms of Service for Domain-ate. The rules governing your use of our AI domain generation service.">
+  <link rel="canonical" href="https://domain-ate.com/terms">
+  <link rel="icon" type="image/svg+xml" href="logo-matrix-icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-primary: #080c14; --bg-secondary: #0f1624;
+      --accent: #6366f1; --accent-light: #a78bfa;
+      --text-primary: #f1f5f9; --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --border: rgba(99, 102, 241, 0.15); --border-bright: rgba(99, 102, 241, 0.5);
+    }
+    body { font-family: 'Syne', sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.8; }
+    .bg-animated { position: fixed; inset: 0; background: radial-gradient(circle at 20% 50%, rgba(99,102,241,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(167,139,250,0.1) 0%, transparent 50%); z-index: -1; }
+    header { padding: 20px 0; position: sticky; top: 0; background: rgba(8,12,20,0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 100; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-icon { display: grid; grid-template-columns: repeat(3, 8px); gap: 4px; }
+    .logo-dot { width: 8px; height: 8px; border-radius: 2px; background: linear-gradient(135deg, #6366f1, #8b5cf6); animation: logo-pulse 2s ease-in-out infinite; }
+    .logo-dot.center { background: linear-gradient(135deg, #ec4899, #f59e0b); }
+    .logo-dot:nth-child(1){animation-delay:0s} .logo-dot:nth-child(2){animation-delay:.1s} .logo-dot:nth-child(3){animation-delay:.2s} .logo-dot:nth-child(4){animation-delay:.3s} .logo-dot:nth-child(5){animation-delay:.4s} .logo-dot:nth-child(6){animation-delay:.5s} .logo-dot:nth-child(7){animation-delay:.6s} .logo-dot:nth-child(8){animation-delay:.7s} .logo-dot:nth-child(9){animation-delay:.8s}
+    @keyframes logo-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(.92)} }
+    .logo-text { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--text-secondary); text-decoration: none; transition: color 0.3s; }
+    .nav-links a:hover { color: var(--text-primary); }
+    .gradient-text { background: linear-gradient(135deg, #6366f1, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    .page-hero { padding: 72px 0 48px; text-align: center; }
+    .page-hero h1 { font-size: 52px; font-weight: 800; margin-bottom: 16px; }
+    .page-hero .updated { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text-muted); }
+
+    .legal-content { max-width: 760px; margin: 0 auto 80px; }
+    .legal-content h2 { font-size: 24px; font-weight: 700; margin: 48px 0 16px; background: linear-gradient(135deg, #6366f1, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .legal-content h3 { font-size: 18px; font-weight: 600; margin: 28px 0 12px; color: var(--text-primary); }
+    .legal-content p { color: var(--text-secondary); font-size: 16px; margin-bottom: 18px; }
+    .legal-content ul { padding-left: 24px; margin-bottom: 18px; }
+    .legal-content li { color: var(--text-secondary); font-size: 16px; margin-bottom: 10px; }
+    .legal-content strong { color: var(--text-primary); }
+    .legal-content a { color: var(--accent-light); text-decoration: none; }
+    .legal-content a:hover { text-decoration: underline; }
+
+    .info-box { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 24px 0; }
+    .info-box p { margin-bottom: 0; font-family: 'DM Mono', monospace; font-size: 14px; }
+
+    footer { border-top: 1px solid var(--border); padding: 40px 0; }
+    .footer-content { display: flex; justify-content: center; align-items: center; gap: 32px; flex-wrap: wrap; }
+    .footer-content a { color: var(--text-muted); text-decoration: none; transition: color 0.3s; }
+    .footer-content a:hover { color: var(--text-primary); }
+
+    @media (max-width: 768px) {
+      .page-hero h1 { font-size: 36px; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-animated"></div>
+
+  <header>
+    <div class="container">
+      <nav>
+        <a href="index.html" class="logo">
+          <div class="logo-icon">
+            <div class="logo-dot"></div><div class="logo-dot"></div><div class="logo-dot"></div>
+            <div class="logo-dot"></div><div class="logo-dot center"></div><div class="logo-dot"></div>
+            <div class="logo-dot"></div><div class="logo-dot"></div><div class="logo-dot"></div>
+          </div>
+          <div class="logo-text">Domain-ate</div>
+        </a>
+        <div class="nav-links">
+          <a href="blog/index.html">Blog</a>
+          <a href="index.html#pricing">Pricing</a>
+          <a href="contact.html">Contact</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Terms of <span class="gradient-text">Service</span></h1>
+      <p class="updated">Last updated: 22 February 2026</p>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="legal-content">
+
+      <div class="info-box">
+        <p>📋 <strong>Plain-English summary:</strong> Use Domain-ate fairly, don't abuse the service, and understand that AI-generated domain suggestions are a starting point — not legal or trademark advice. The full terms are below.</p>
+      </div>
+
+      <h2>1. Acceptance of Terms</h2>
+      <p>By accessing or using Domain-ate at <strong>domain-ate.com</strong> (the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree, please do not use the Service.</p>
+      <p>We may update these Terms from time to time. Continued use of the Service after changes are posted constitutes your acceptance of the revised Terms.</p>
+
+      <h2>2. About the Service</h2>
+      <p>Domain-ate is an AI-powered domain name generation and consulting tool. It provides suggestions for domain names based on user inputs. The Service is provided for informational and creative purposes only.</p>
+      <p><strong>Domain-ate does not register domains on your behalf, does not guarantee domain availability, and does not provide legal, trademark, or business advice.</strong> You are solely responsible for verifying that any domain name or business name you choose is legally available for use.</p>
+
+      <h2>3. Eligibility</h2>
+      <p>You must be at least 13 years of age to use the Service. By using Domain-ate, you represent that you meet this requirement. If you are using the Service on behalf of a company or organisation, you represent that you have authority to bind that entity to these Terms.</p>
+
+      <h2>4. Acceptable Use</h2>
+      <p>You agree not to use the Service to:</p>
+      <ul>
+        <li>Generate names for unlawful purposes or to promote illegal activity</li>
+        <li>Infringe the intellectual property rights of any third party</li>
+        <li>Attempt to gain unauthorised access to any part of our systems</li>
+        <li>Scrape, crawl, or automatically extract data from the Service in bulk without our written permission</li>
+        <li>Interfere with or disrupt the Service or its underlying infrastructure</li>
+        <li>Use the Service to send spam or unsolicited communications</li>
+        <li>Reverse engineer, decompile, or attempt to extract source code</li>
+      </ul>
+      <p>We reserve the right to suspend or terminate access for violations of this section.</p>
+
+      <h2>5. AI-Generated Content</h2>
+      <p>Domain suggestions generated by Domain-ate are produced by AI and are provided "as is". You acknowledge that:</p>
+      <ul>
+        <li>AI-generated suggestions may not be unique, original, or free from similarity to existing brands or trademarks</li>
+        <li>Domain availability shown by the Service is indicative only and may change between the time of suggestion and the time of registration</li>
+        <li>You are solely responsible for conducting your own trademark searches, legal due diligence, and domain registration</li>
+        <li>Domain-ate makes no warranty that any suggested name is available for commercial use or trademark registration</li>
+      </ul>
+
+      <h2>6. Intellectual Property</h2>
+
+      <h3>Our IP</h3>
+      <p>The Domain-ate website, branding, design, software, and content (excluding user inputs and AI outputs) are owned by Domain-ate and protected by applicable intellectual property laws. You may not copy, reproduce, or distribute our proprietary materials without written permission.</p>
+
+      <h3>Your inputs</h3>
+      <p>You retain ownership of any prompts or keywords you submit. By submitting inputs, you grant us a limited licence to process them for the purpose of generating your results.</p>
+
+      <h3>AI-generated outputs</h3>
+      <p>Domain suggestions generated in response to your inputs are provided to you for your own use. We do not claim ownership of these outputs.</p>
+
+      <h2>7. Disclaimers</h2>
+      <p>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.</p>
+      <p>We do not warrant that the Service will be uninterrupted, error-free, or free from viruses or other harmful components. We do not warrant the accuracy, completeness, or usefulness of any domain suggestion.</p>
+
+      <h2>8. Limitation of Liability</h2>
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, DOMAIN-ATE SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SERVICE, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, OR GOODWILL.</p>
+      <p>Our total liability to you for any claims arising from your use of the Service shall not exceed the greater of (a) the amount you have paid us in the 12 months preceding the claim, or (b) £50 GBP.</p>
+
+      <h2>9. Third-Party Services</h2>
+      <p>The Service may contain links to third-party websites or services (such as domain registrars). These are provided for convenience only. We are not responsible for the content, policies, or practices of any third-party services, and your use of them is governed by their own terms.</p>
+
+      <h2>10. Termination</h2>
+      <p>We may suspend or terminate your access to the Service at any time, with or without notice, for conduct that we determine violates these Terms or is harmful to other users, us, or third parties. You may stop using the Service at any time.</p>
+
+      <h2>11. Governing Law</h2>
+      <p>These Terms are governed by and construed in accordance with the laws of England and Wales. Any disputes arising from or in connection with these Terms shall be subject to the exclusive jurisdiction of the courts of England and Wales.</p>
+
+      <h2>12. Changes to These Terms</h2>
+      <p>We may update these Terms from time to time. We will post the updated Terms on this page with a revised "Last updated" date. For material changes, we will notify registered users by email. Your continued use of the Service after the effective date of any changes constitutes your acceptance of the new Terms.</p>
+
+      <h2>13. Contact</h2>
+      <p>If you have questions about these Terms, please contact us:</p>
+      <p><strong>Email:</strong> <a href="mailto:hello@domain-ate.com">hello@domain-ate.com</a><br>
+      <strong>Website:</strong> <a href="contact.html">domain-ate.com/contact</a></p>
+
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">
+            <div class="logo-dot"></div><div class="logo-dot"></div><div class="logo-dot"></div>
+            <div class="logo-dot"></div><div class="logo-dot center"></div><div class="logo-dot"></div>
+            <div class="logo-dot"></div><div class="logo-dot"></div><div class="logo-dot"></div>
+          </div>
+          <div class="logo-text">Domain-ate</div>
+        </a>
+        <a href="blog/index.html">Blog</a>
+        <a href="contact.html">Contact</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </div>
+      <p style="text-align:center; color:#64748b; margin-top:20px; font-size:14px;">© 2026 Domain-ate. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

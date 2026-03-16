@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact | Domain-ate</title>
+  <meta name="description" content="Get in touch with the Domain-ate team. Questions, feedback, or partnership enquiries — we'd love to hear from you.">
+  <link rel="canonical" href="https://domain-ate.com/contact">
+  <link rel="icon" type="image/svg+xml" href="logo-matrix-icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-primary: #080c14; --bg-secondary: #0f1624;
+      --accent: #6366f1; --accent-light: #a78bfa;
+      --text-primary: #f1f5f9; --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --border: rgba(99, 102, 241, 0.15); --border-bright: rgba(99, 102, 241, 0.5);
+    }
+    body { font-family: 'Syne', sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.7; }
+    .bg-animated { position: fixed; inset: 0; background: radial-gradient(circle at 20% 50%, rgba(99,102,241,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(167,139,250,0.1) 0%, transparent 50%); z-index: -1; }
+    header { padding: 20px 0; position: sticky; top: 0; background: rgba(8,12,20,0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 100; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-icon { display: grid; grid-template-columns: repeat(3, 8px); gap: 4px; }
+    .logo-dot { width: 8px; height: 8px; border-radius: 2px; background: linear-gradient(135deg, #6366f1, #8b5cf6); animation: logo-pulse 2s ease-in-out infinite; }
+    .logo-dot.center { background: linear-gradient(135deg, #ec4899, #f59e0b); }
+    .logo-dot:nth-child(1){animation-delay:0s} .logo-dot:nth-child(2){animation-delay:.1s} .logo-dot:nth-child(3){animation-delay:.2s} .logo-dot:nth-child(4){animation-delay:.3s} .logo-dot:nth-child(5){animation-delay:.4s} .logo-dot:nth-child(6){animation-delay:.5s} .logo-dot:nth-child(7){animation-delay:.6s} .logo-dot:nth-child(8){animation-delay:.7s} .logo-dot:nth-child(9){animation-delay:.8s}
+    @keyframes logo-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(.92)} }
+    .logo-text { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--text-secondary); text-decoration: none; transition: color 0.3s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text-primary); }
+    .gradient-text { background: linear-gradient(135deg, #6366f1, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* Page */
+    .page-hero { padding: 72px 0 48px; text-align: center; }
+    .page-hero h1 { font-size: 52px; font-weight: 800; margin-bottom: 16px; line-height: 1.1; }
+    .page-hero p { font-size: 16px; color: var(--text-secondary); font-family: 'DM Mono', monospace; max-width: 480px; margin: 0 auto; }
+
+    .contact-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; max-width: 960px; margin: 0 auto 80px; align-items: start; }
+
+    .contact-info h2 { font-size: 24px; font-weight: 700; margin-bottom: 16px; }
+    .contact-info p { color: var(--text-secondary); font-size: 16px; margin-bottom: 32px; font-family: 'DM Mono', monospace; }
+
+    .contact-method { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 16px; }
+    .contact-method-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
+    .contact-method a { font-size: 17px; font-weight: 600; color: var(--text-primary); text-decoration: none; transition: color 0.2s; }
+    .contact-method a:hover { color: var(--accent-light); }
+    .contact-method p { font-size: 14px; color: var(--text-muted); margin: 6px 0 0; font-family: 'DM Mono', monospace; }
+
+    /* Form */
+    .contact-form-wrap { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 40px; }
+    .contact-form-wrap h2 { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); font-family: 'DM Mono', monospace; }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%; padding: 14px 16px;
+      background: var(--bg-primary); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text-primary);
+      font-family: 'DM Mono', monospace; font-size: 14px;
+      transition: border-color 0.2s; outline: none;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus { border-color: var(--border-bright); }
+    .form-group textarea { resize: vertical; min-height: 120px; }
+    .form-group select option { background: var(--bg-secondary); }
+    .submit-btn {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white; border: none; border-radius: 12px;
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px;
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(99,102,241,0.4); }
+
+    footer { border-top: 1px solid var(--border); padding: 40px 0; }
+    .footer-content { display: flex; justify-content: center; align-items: center; gap: 32px; flex-wrap: wrap; }
+    .footer-content a { color: var(--text-muted); text-decoration: none; transition: color 0.3s; }
+    .footer-content a:hover { color: var(--text-primary); }
+
+    @media (max-width: 768px) {
+      .page-hero h1 { font-size: 36px; }
+      .nav-links { display: none; }
+      .contact-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-animated"></div>
+
+  <header>
+    <div class="container">
+      <nav>
+        <a href="index.html" class="logo">
+          <div class="logo-icon">
+            <div class="logo-dot"></div><div class="logo-dot"></div><div class="logo-dot"></div>
+            <div class="logo-dot"></div><div class="logo-dot center"></div><div class="logo-dot"></div>
+            <div class="logo-dot"></div><div class="logo-dot"></div><div class="logo-dot"></div>
+          </div>
+          <div class="logo-text">Domain-ate</div>
+        </a>
+        <div class="nav-links">
+          <a href="blog/index.html">Blog</a>
+          <a href="index.html#pricing">Pricing</a>
+          <a href="contact.html" class="active">Contact</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Get in <span class="gradient-text">Touch</span></h1>
+      <p>Questions, feedback, or partnership enquiries — we'd love to hear from you.</p>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="contact-layout">
+
+      <div class="contact-info">
+        <h2>How can we help?</h2>
+        <p>Whether you have a question about the product, want to report a bug, or are interested in working with us — drop us a line.</p>
+
+        <div class="contact-method">
+          <div class="contact-method-label">General Enquiries</div>
+          <a href="mailto:hello@domain-ate.com">hello@domain-ate.com</a>
+          <p>For product questions, feedback, and general chat.</p>
+        </div>
+
+        <div class="contact-method">
+          <div class="contact-method-label">Partnerships & Press</div>
+          <a href="mailto:partnerships@domain-ate.com">partnerships@domain-ate.com</a>
+          <p>Collaborations, integrations, and media enquiries.</p>
+        </div>
+
+        <div class="contact-method">
+          <div class="contact-method-label">Response Time</div>
+          <span style="font-size:17px; font-weight:600; color: var(--text-primary);">Within 48 hours</span>
+          <p>We read every message and reply to each one personally.</p>
+        </div>
+      </div>
+
+      <div class="contact-form-wrap">
+        <h2>Send a message</h2>
+        <form action="https://tally.so/r/contact" method="POST" target="_blank">
+          <div class="form-group">
+            <label for="name">Your name</label>
+            <input type="text" id="name" name="name" placeholder="Jane Smith" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email address</label>
+            <input type="email" id="email" name="email" placeholder="jane@company.com" required>
+          </div>
+          <div class="form-group">
+            <label for="subject">Subject</label>
+            <select id="subject" name="subject">
+              <option value="">Select a topic…</option>
+              <option>General question</option>
+              <option>Product feedback</option>
+              <option>Bug report</option>
+              <option>Partnership / press</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" placeholder="Tell us what's on your mind…" required></textarea>
+          </div>
+          <button type="submit" class="submit-btn">Send Message →</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">
+            <div class="logo-dot"></div><div class="logo-dot"></div><div class="logo-dot"></div>
+            <div class="logo-dot"></div><div class="logo-dot center"></div><div class="logo-dot"></div>
+            <div class="logo-dot"></div><div class="logo-dot"></div><div class="logo-dot"></div>
+          </div>
+          <div class="logo-text">Domain-ate</div>
+        </a>
+        <a href="blog/index.html">Blog</a>
+        <a href="contact.html">Contact</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </div>
+      <p style="text-align:center; color:#64748b; margin-top:20px; font-size:14px;">© 2026 Domain-ate. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>
