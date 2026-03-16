@@ -3,29 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Domain-ate - AI Domain Consultant | Join Waitlist</title>
-  <meta name="description" content="Join the waitlist for Domain-ate - the AI consultant that finds your perfect domain. Get 6 months PRO free as an early user.">
+  <title>Domain-ate - AI Domain Name Generator | Find Your Perfect Domain</title>
+  <meta name="description" content="Domain-ate is the AI-powered domain consultant that finds your perfect domain name. Describe your business and get smart, available suggestions instantly.">
   
   <!-- Open Graph -->
   <meta property="og:title" content="Domain-ate - AI Domain Consultant">
-  <meta property="og:description" content="Domain finding that feels like consulting, not searching. Join the waitlist for early access.">
+  <meta property="og:description" content="Domain finding that feels like consulting, not searching.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://domain-ate.com">
-  
-  <!-- Canonical -->
+  <meta property="og:url" content="https://domain-ate.com/">
   <link rel="canonical" href="https://domain-ate.com/">
-
+  
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="logo-matrix-icon.svg">
-  
-  <!-- Tally Popup Script - REQUIRED FOR FORM -->
-  <script src="https://tally.so/widgets/embed.js"></script>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-  
+
+  <!-- Clerk Auth -->
+  <script>window.__clerk_publishable_key = 'pk_test_ZWFnZXItYW50ZWxvcGUtNjQuY2xlcmsuYWNjb3VudHMuZGV2JA';</script>
+  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
+
   <style>
     * {
       margin: 0;
@@ -161,7 +160,7 @@
     }
 
     .hero h1 {
-      font-size: 64px;
+      font-size: clamp(28px, 4vw, 48px);
       font-weight: 800;
       margin-bottom: 24px;
       line-height: 1.1;
@@ -175,28 +174,15 @@
     }
 
     .hero-subtitle {
-      font-size: 20px;
+      font-size: 18px;
       color: var(--text-secondary);
       margin-bottom: 48px;
-      max-width: 700px;
+      max-width: 600px;
       margin-left: auto;
       margin-right: auto;
-      font-family: 'DM Mono', monospace;
+      font-family: Inter, system-ui, sans-serif;
       font-weight: 400;
-    }
-
-    .cta-top {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 60px;
-    }
-
-    .cta-top .cta-button {
-      width: auto;
-      padding: 20px 48px;
-      font-size: 18px;
+      line-height: 1.6;
     }
 
     .cta-section {
@@ -208,7 +194,7 @@
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 48px;
+      padding: 32px 48px;
       backdrop-filter: blur(10px);
       box-shadow: 0 20px 60px rgba(99, 102, 241, 0.1);
       transition: all 0.3s;
@@ -231,30 +217,7 @@
       color: var(--text-secondary);
       margin-bottom: 32px;
       text-align: center;
-      font-family: 'DM Mono', monospace;
-    }
-
-    .benefit-list {
-      list-style: none;
-      margin-bottom: 32px;
-    }
-
-    .benefit-list li {
-      padding: 12px 0;
-      display: flex;
-      align-items: start;
-      gap: 12px;
-      color: var(--text-secondary);
-      font-family: 'DM Mono', monospace;
-      font-size: 13px;
-    }
-
-    .benefit-list li::before {
-      content: '✓';
-      color: var(--success);
-      font-weight: 700;
-      flex-shrink: 0;
-      font-size: 20px;
+      font-family: Inter, system-ui, sans-serif;
     }
 
     .cta-button {
@@ -264,23 +227,259 @@
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
       color: white;
       border: none;
-      border-radius: 16px;
+      border-radius: 12px;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.3s;
-      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+      font-family: 'Syne', sans-serif;
     }
 
     .cta-button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 20px 50px rgba(99, 102, 241, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
     }
 
     .cta-hint {
       text-align: center;
-      margin-top: 16px;
-      font-size: 12px;
+      font-size: 13px;
+      font-family: Inter, system-ui, sans-serif;
       color: var(--text-muted);
+    }
+
+    /* Demo-specific styles */
+    .demo-textarea {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      color: var(--text-primary);
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      resize: vertical;
+      min-height: 100px;
+      margin-bottom: 24px;
+      transition: border-color 0.3s;
+    }
+
+    .demo-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .demo-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    .thinking-container {
+      display: none;
+    }
+
+    .thinking-container.active {
+      display: block;
+    }
+
+    /* Single animated status message — replaces old scrolling list */
+    .status-message {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 14px;
+      min-height: 52px;
+      opacity: 0;
+    }
+
+    .status-message.status-visible {
+      animation: statusIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes statusIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .status-message.acknowledgment {
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .status-indicator {
+      flex-shrink: 0;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 3-dot typing indicator */
+    .thinking-dots {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .thinking-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: dotPulse 1.3s ease-in-out infinite;
+    }
+
+    .thinking-dots span:nth-child(1) { animation-delay: 0s; }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.18s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.36s; }
+
+    @keyframes dotPulse {
+      0%, 80%, 100% { transform: scale(0.55); opacity: 0.3; }
+      40%           { transform: scale(1);    opacity: 1; }
+    }
+
+    /* Check circle for acknowledgment steps */
+    .check-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.15);
+      border: 2px solid rgba(16, 185, 129, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6ee7b7;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .status-content {
+      flex: 1;
+      color: var(--text-secondary);
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .status-message.acknowledgment .status-content {
+      color: #6ee7b7;
+      font-weight: 600;
+    }
+
+    .question-card {
+      border-top: 1px solid var(--border);
+      padding: 14px 0 4px;
+      margin-bottom: 12px;
+    }
+
+    .question-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 5px;
+    }
+
+    .question-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .option-button {
+      background: rgba(99, 102, 241, 0.06);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .option-button:hover {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .option-emoji {
+      font-size: 15px;
+    }
+
+    .option-label {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .question-footer {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .skip-button {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 8px 16px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 500;
+      transition: color 0.2s;
+      font-size: 14px;
+    }
+
+    .skip-button:hover {
+      color: var(--text-primary);
+    }
+
+    .timer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .progress-bar {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      transition: width 0.5s ease;
+    }
+
+    .progress-text {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
       font-family: 'DM Mono', monospace;
     }
 
@@ -288,21 +487,18 @@
       display: flex;
       justify-content: center;
       gap: 40px;
-      margin-top: 48px;
       flex-wrap: wrap;
+      margin-top: 40px;
     }
 
     .trust-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text-secondary);
-      font-size: 12px;
       font-family: 'DM Mono', monospace;
-    }
-
-    section {
-      padding: 80px 0;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-secondary);
     }
 
     .section-header {
@@ -312,11 +508,12 @@
 
     .section-header h2 {
       font-size: 48px;
+      font-weight: 800;
       margin-bottom: 16px;
     }
 
     .section-header p {
-      font-size: 14px;
+      font-size: 18px;
       color: var(--text-secondary);
       font-family: 'DM Mono', monospace;
     }
@@ -324,7 +521,8 @@
     .features-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 40px;
+      gap: 32px;
+      margin-top: 60px;
     }
 
     .feature-card {
@@ -336,57 +534,59 @@
     }
 
     .feature-card:hover {
+      transform: translateY(-4px);
       border-color: var(--border-bright);
-      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
     }
 
     .feature-number {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: var(--accent);
-      text-transform: uppercase;
+      font-size: 48px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #6366f1, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: 16px;
-      font-family: 'DM Mono', monospace;
     }
 
     .feature-card h3 {
-      font-size: 20px;
-      margin-bottom: 12px;
+      font-size: 24px;
       font-weight: 700;
+      margin-bottom: 12px;
     }
 
     .feature-card p {
       color: var(--text-secondary);
       font-family: 'DM Mono', monospace;
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: 14px;
     }
 
     .comparison-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 40px;
-      max-width: 900px;
-      margin: 0 auto;
+      gap: 32px;
+      margin-top: 60px;
     }
 
     .comparison-card {
       background: var(--bg-secondary);
-      border: 1px solid var(--border);
+      border: 2px solid var(--border);
       border-radius: 16px;
       padding: 32px;
     }
 
+    .comparison-card.bad {
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
     .comparison-card.good {
       border-color: var(--border-bright);
-      background: rgba(99, 102, 241, 0.05);
     }
 
     .comparison-header {
       font-size: 24px;
       font-weight: 700;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
 
     .comparison-list {
@@ -395,16 +595,18 @@
 
     .comparison-list li {
       padding: 12px 0;
-      color: var(--text-secondary);
       display: flex;
       align-items: start;
-      gap: 8px;
+      gap: 12px;
+      color: var(--text-secondary);
       font-family: 'DM Mono', monospace;
-      font-size: 13px;
+      font-size: 14px;
     }
 
     .comparison-card.bad .comparison-list li::before {
-      content: '❌';
+      content: '✗';
+      color: #ef4444;
+      font-weight: 700;
     }
 
     .comparison-card.good .comparison-list li::before {
@@ -437,14 +639,568 @@
       color: var(--text-primary);
     }
 
+    .hidden {
+      display: none;
+    }
+
+    /* ── Results Stage ──────────────────────────────────────── */
+    .results-container {
+      display: none;
+    }
+    .results-container.active {
+      display: block;
+    }
+
+    .results-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .results-header p {
+      font-size: 16px;
+      font-family: Inter, system-ui, sans-serif;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .domains-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .domain-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      transition: border-color 0.25s, box-shadow 0.25s, opacity 0.35s ease, transform 0.35s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0; /* grid items default to min-width:auto which causes overflow */
+      text-align: left;
+    }
+    /* Entrance animation — class removed via rAF after append */
+    .card-entering {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    .domain-card:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+    }
+
+    .domain-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+    }
+    /* Name + TLD are an unbreakable unit — never ellipse the TLD */
+    .domain-name > span:first-child {
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .domain-name .tld {
+      color: var(--accent-light);
+    }
+
+    .domain-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .style-badge.brandable  { background: rgba(99,102,241,0.15); color: #a78bfa; border: 1px solid rgba(99,102,241,0.3); }
+    .style-badge.keyword    { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .style-badge.hybrid     { background: rgba(236,72,153,0.15); color: #f472b6; border: 1px solid rgba(236,72,153,0.3); }
+
+    .avail-badge.checking   { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+    .avail-badge.available  { background: rgba(16,185,129,0.15);  color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+    .avail-badge.taken      { background: rgba(239,68,68,0.15);   color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+    .avail-badge.unknown    { background: rgba(100,116,139,0.1);  color: #64748b; border: 1px solid rgba(100,116,139,0.2); }
+
+    .domain-rationale {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: Inter, system-ui, sans-serif;
+      line-height: 1.55;
+      flex: 1;
+    }
+
+    .register-link {
+      display: block;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6ee7b7;
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3);
+      transition: all 0.2s;
+      font-family: 'DM Mono', monospace;
+      margin-top: 4px;
+    }
+    .register-link:hover {
+      background: rgba(16,185,129,0.2);
+      border-color: rgba(16,185,129,0.5);
+      color: #a7f3d0;
+    }
+    .check-link {
+      display: block;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+      font-family: 'DM Mono', monospace;
+      margin-top: 4px;
+    }
+    .check-link:hover {
+      border-color: var(--border-bright);
+      color: var(--text-secondary);
+    }
+
+    .start-over-btn {
+      width: 100%;
+      padding: 16px;
+      background: transparent;
+      border: 2px solid var(--border-bright);
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .start-over-btn:hover {
+      background: rgba(99,102,241,0.1);
+      color: var(--text-primary);
+    }
+
+    .results-error {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+    }
+    .results-error p { margin-bottom: 16px; }
+
+    /* ── Availability summary ─────────────────────────────────── */
+    .availability-summary {
+      text-align: center;
+      margin-bottom: 20px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .availability-summary strong {
+      color: var(--success);
+      font-size: 16px;
+    }
+
+    /* ── Filter bar ───────────────────────────────────────────── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .filter-pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-pill:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+    .filter-pill.active {
+      background: rgba(99,102,241,0.15);
+      border-color: var(--accent);
+      color: var(--accent-light);
+    }
+
+    /* ── Searching indicator ────────────────────────────────── */
+    .searching-indicator {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 0 8px;
+      color: var(--text-muted);
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 13px;
+      grid-column: 1 / -1;
+    }
+    .searching-indicator.active { display: flex; }
+
+    /* ── Skeleton / thinking card ───────────────────────────── */
+    .domain-card-skeleton {
+      position: relative;
+      overflow: hidden;
+    }
+    .domain-card-skeleton::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(99, 102, 241, 0.07) 50%,
+        transparent 100%
+      );
+      animation: shimmer 1.8s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .skeleton-line {
+      background: rgba(99, 102, 241, 0.12);
+      border-radius: 6px;
+      animation: skeletonPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes skeletonPulse {
+      0%, 100% { opacity: 0.35; }
+      50%       { opacity: 0.7; }
+    }
+    .skeleton-domain { height: 22px; width: 55%; }
+    .skeleton-score  { height: 22px; width: 42px; border-radius: 20px; }
+    .skeleton-badge  { height: 20px; width: 80px; border-radius: 6px; }
+    .skeleton-text   { height: 13px; }
+    .skeleton-text.w-full { width: 100%; }
+    .skeleton-text.w-4-5  { width: 82%; }
+    .skeleton-text.w-3-5  { width: 62%; }
+    .skeleton-btn    { height: 38px; width: 100%; border-radius: 10px; margin-top: 4px; }
+
+    /* ── Taken card dim ──────────────────────────────────────── */
+    .domain-card.taken {
+      opacity: 0.35;
+    }
+    .domain-card.taken:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--border);
+    }
+    .domain-card.taken .domain-name {
+      text-decoration: line-through;
+      text-decoration-color: rgba(239,68,68,0.6);
+    }
+
+    /* ── Copy button ─────────────────────────────────────────── */
+    .copy-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 2px 6px;
+      font-size: 15px;
+      line-height: 1;
+      transition: color 0.2s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { color: var(--accent-light); }
+    .copy-btn.copied { color: var(--success); }
+
+    /* ── Results action buttons ──────────────────────────────── */
+    .results-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .regenerate-btn {
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15));
+      border: 2px solid var(--border-bright);
+      border-radius: 12px;
+      color: var(--accent-light);
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .regenerate-btn:hover {
+      background: rgba(99,102,241,0.25);
+      color: var(--text-primary);
+    }
+
+    /* ── Auth Gate ───────────────────────────────────────── */
+    .auth-gate {
+      display: none;
+    }
+    .auth-gate.active {
+      display: block;
+    }
+    .auth-gate-icon {
+      font-size: 52px;
+      margin-bottom: 16px;
+      line-height: 1;
+    }
+    .auth-gate-note {
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 20px;
+    }
+
+    /* Override Clerk component — only fix what bleeds from site styles */
+    #clerk-auth-container h1,
+    #clerk-auth-container h2,
+    #clerk-auth-container h3,
+    #clerk-auth-container .cl-headerTitle {
+      font-size: 20px !important;
+      font-weight: 700 !important;
+      line-height: 1.3 !important;
+      letter-spacing: normal !important;
+      font-family: 'Syne', sans-serif !important;
+    }
+    #clerk-auth-container {
+      display: flex;
+      justify-content: center;
+    }
+    #clerk-auth-container .cl-rootBox { width: 100%; max-width: 480px; }
+    #clerk-auth-container .cl-card {
+      background: rgba(15, 22, 36, 0.95) !important;
+      border: 1px solid rgba(99, 102, 241, 0.3) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+    }
+    #clerk-auth-container .cl-socialButtonsBlockButton {
+      background: rgba(99, 102, 241, 0.12) !important;
+      border: 1px solid rgba(99, 102, 241, 0.3) !important;
+      color: #f1f5f9 !important;
+    }
+    #clerk-auth-container .cl-socialButtonsBlockButtonText {
+      color: #f1f5f9 !important;
+    }
+
+    /* ── Upgrade Modal ───────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-bright);
+      border-radius: 20px;
+      padding: 40px 36px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+    }
+    .modal-icon { font-size: 48px; margin-bottom: 16px; }
+    .modal-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+    .modal-card > p { color: var(--text-secondary); font-family: 'DM Mono', monospace; font-size: 14px; margin-bottom: 24px; }
+    .modal-price {
+      font-size: 52px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #6366f1, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+    .modal-price span { font-size: 18px; opacity: 0.6; }
+    .modal-period {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    .modal-features {
+      list-style: none;
+      text-align: left;
+      background: rgba(99,102,241,0.08);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .modal-features li {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 5px 0;
+    }
+    .modal-features li::before { content: '✓ '; color: var(--success); font-weight: 700; }
+    .upgrade-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-bottom: 12px;
+    }
+    .upgrade-btn:hover { opacity: 0.9; }
+    .modal-dismiss {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 8px;
+      transition: color 0.2s;
+    }
+    .modal-dismiss:hover { color: var(--text-primary); }
+
+    /* ── Domain card header (name + score side by side) ─── */
+    .domain-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    /* ── Domain Score pill ──────────────────────────────── */
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: help;
+      position: relative;
+      flex-shrink: 0;
+      white-space: nowrap;
+      align-self: flex-start;
+    }
+    .score-pill.score-green { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+    .score-pill.score-amber { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+    .score-pill.score-red   { background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+
+    .score-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      right: 0;
+      background: #1a2235;
+      border: 1px solid var(--border-bright);
+      border-radius: 10px;
+      padding: 12px;
+      width: 210px;
+      z-index: 20;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      text-align: left;
+    }
+    .score-pill:hover .score-tooltip { display: block; }
+    .score-tooltip-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .score-tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      color: var(--text-muted);
+    }
+    .score-tooltip-row span:last-child { color: var(--text-secondary); }
+
+    /* ── Domain meta row (price + social handle) ─────── */
+    .domain-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .price-val { color: var(--text-secondary); }
+    .price-val.premium-price { color: #f59e0b; }
+    .social-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      transition: all 0.2s;
+    }
+    .social-link:hover {
+      color: var(--accent-light);
+      border-color: var(--accent);
+      background: rgba(99,102,241,0.08);
+    }
+
     @media (max-width: 768px) {
-      .hero h1 { font-size: 40px; }
+      .results-actions { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 32px; }
       .hero-subtitle { font-size: 18px; }
       .nav-links { display: none; }
       .cta-heading { font-size: 24px; }
       .input-wrapper { padding: 32px 24px; }
       .comparison-grid { grid-template-columns: 1fr; }
       .trust-signals { gap: 20px; }
+      .options { gap: 6px; }
+      .domains-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -487,37 +1243,92 @@
       </h1>
       
       <p class="hero-subtitle">
-        Skip the boring forms. Our AI consultant asks smart questions while brainstorming your perfect domain. Get personalized results in 12 seconds.
+        Skip the boring forms. Our AI consultant asks smart questions while brainstorming your perfect domain. Get personalised results in seconds.
       </p>
 
-      <div class="cta-top">
-        <button 
-          class="cta-button"
-          data-tally-open="9qDM05"
-          data-tally-layout="modal"
-          data-tally-width="600"
-          data-tally-overlay="1">
-          Join the Waitlist
-        </button>
-        <p class="cta-hint">No credit card required • Unsubscribe anytime</p>
-      </div>
-
+      <!-- INTERACTIVE DEMO SECTION -->
       <div class="cta-section">
-        <div class="input-wrapper">
-          <h2 class="cta-heading">Get Early Access</h2>
-          <p class="cta-subheading">Join the waitlist for exclusive benefits</p>
+        <div id="inputStage">
+          <div class="input-wrapper">
+            <p class="cta-subheading" style="margin-bottom:20px;">✦ Try it now — describe your business below</p>
 
-          <ul class="benefit-list">
-            <li>Be first to try Domain-ate when we launch</li>
-            <li>Exclusive founding member discount</li>
-            <li>Help shape the product with your feedback</li>
-          </ul>
+            <textarea
+              id="businessDescription"
+              class="demo-textarea"
+              placeholder="e.g., A sustainable fashion marketplace for Gen Z consumers"
+              onfocus="if(this.value===this.defaultValue)this.value=''"
+              onblur="if(this.value==='')this.value=this.defaultValue"
+            >A sustainable fashion marketplace for Gen Z consumers</textarea>
+            
+            <button class="cta-button" onclick="startBrainstorming()">
+              Start Brainstorming
+            </button>
+            <p class="cta-hint" style="margin-top: 16px;">Watch the AI think and ask questions in real-time</p>
+          </div>
+        </div>
+
+        <div id="thinkingStage" class="thinking-container">
+          <div class="input-wrapper">
+            <p class="cta-subheading mono" id="businessDesc" style="margin-bottom:16px;"></p>
+
+            <div class="status-message" id="statusMessage">
+              <div class="status-indicator" id="statusIndicator"></div>
+              <div class="status-content" id="statusContent"></div>
+            </div>
+
+            <div id="questionContainer"></div>
+
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <p class="progress-text"><span id="progressText">0</span>% complete</p>
+          </div>
+        </div>
+
+        <!-- AUTH GATE: shown when results are ready but user is not logged in -->
+        <div id="authGate" class="auth-gate">
+          <div class="input-wrapper" style="text-align:center;">
+            <div class="auth-gate-icon">✨</div>
+            <h2 class="cta-heading">Your domains are ready</h2>
+            <p class="cta-subheading" style="margin-bottom:28px;">Sign in to see your 10 personalised suggestions</p>
+            <div id="clerk-auth-container"></div>
+            <p class="auth-gate-note">Free &middot; 5 consultations/month &middot; No credit card needed</p>
+          </div>
+        </div>
+
+        <div id="resultsStage" class="results-container">
+          <div class="input-wrapper">
+            <div class="results-header">
+              <p id="resultsSubheading"></p>
+            </div>
+
+            <div id="availabilitySummary" class="availability-summary"></div>
+
+            <div class="filter-bar">
+              <button class="filter-pill active" onclick="filterResults('all', this)">All</button>
+              <button class="filter-pill" onclick="filterResults('brandable', this)">Brandable</button>
+              <button class="filter-pill" onclick="filterResults('keyword', this)">Keyword</button>
+              <button class="filter-pill" onclick="filterResults('hybrid', this)">Hybrid</button>
+            </div>
+
+            <div id="domainsGrid" class="domains-grid"></div>
+
+            <div id="searchingIndicator" class="searching-indicator">
+              <div class="thinking-dots"><span></span><span></span><span></span></div>
+              <span id="searchingText">Finding more domains…</span>
+            </div>
+
+            <div class="results-actions">
+              <button class="regenerate-btn" onclick="regenerateSuggestions()">↻ Regenerate</button>
+              <button class="start-over-btn" onclick="resetDemo()">↩ Start Over</button>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="trust-signals">
         <div class="trust-item">AI Consultant</div>
-        <div class="trust-item">12 Second Results</div>
+        <div class="trust-item">Instant Results</div>
         <div class="trust-item">Privacy Focused</div>
         <div class="trust-item">Early Bird Perks</div>
       </div>
@@ -547,36 +1358,7 @@
         <div class="feature-card">
           <div class="feature-number">03</div>
           <h3>Get Perfect Domains</h3>
-          <p>15 personalized suggestions in 12 seconds. Available, memorable, and SEO-friendly.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="blog">
-    <div class="container">
-      <div class="section-header">
-        <h2>Learn More About <span class="gradient-text">Domain Selection</span></h2>
-        <p>Expert insights to help you make the right choice</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-number">📊</div>
-          <h3><a href="blog/blog-generators-vs-ai.html" style="color: inherit; text-decoration: none;">Domain Generators vs AI Consultants</a></h3>
-          <p>See how AI consultants produce better results than traditional domain generators. Compare the approaches and find out which saves you time.</p>
-          <a href="blog/blog-generators-vs-ai.html" style="color: #6366f1; font-weight: 600; margin-top: 12px; display: inline-block;">Read More →</a>
-        </div>
-        <div class="feature-card">
-          <div class="feature-number">📈</div>
-          <h3><a href="blog/blog-trends-statistics.html" style="color: inherit; text-decoration: none;">Domain Name Trends 2026</a></h3>
-          <p>Discover the latest domain trends, TLD growth data, and what's working for successful startups in 2026.</p>
-          <a href="blog/blog-trends-statistics.html" style="color: #6366f1; font-weight: 600; margin-top: 12px; display: inline-block;">Read More →</a>
-        </div>
-        <div class="feature-card">
-          <div class="feature-number">⚠️</div>
-          <h3><a href="blog/blog-domain-mistakes.html" style="color: inherit; text-decoration: none;">7 Domain Mistakes to Avoid</a></h3>
-          <p>Learn from others' failures. These domain mistakes have cost companies millions in lost traffic and brand confusion.</p>
-          <a href="blog/blog-domain-mistakes.html" style="color: #6366f1; font-weight: 600; margin-top: 12px; display: inline-block;">Read More →</a>
+          <p>10 personalised domain suggestions. Available, memorable, and SEO-friendly.</p>
         </div>
       </div>
     </div>
@@ -686,6 +1468,25 @@
     </div>
   </footer>
 
+  <!-- UPGRADE MODAL -->
+  <div id="upgradeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-icon">🚀</div>
+      <h2>You've used all 5 free consultations</h2>
+      <p>Upgrade to Pro for unlimited consultations and full access</p>
+      <div class="modal-price">$9<span>/mo</span></div>
+      <p class="modal-period">Cancel anytime</p>
+      <ul class="modal-features">
+        <li>Unlimited consultations</li>
+        <li>Domain score &amp; live pricing</li>
+        <li>Social handle checks</li>
+        <li>Priority support</li>
+      </ul>
+      <button class="upgrade-btn" onclick="startCheckout()">Upgrade Now →</button>
+      <button class="modal-dismiss" onclick="closeUpgradeModal()">Maybe later</button>
+    </div>
+  </div>
+
   <script>
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -697,6 +1498,986 @@
         }
       });
     });
+
+    // Interactive Demo Logic
+    let currentQuestion = null;
+    let answers = {};
+    let progress = 0;
+    let questionTimer = null;
+    let lastSuggestions = [];
+    let lastAvailability = {};
+    let lastPremiumPrices = {};
+    let lastPrices = {};
+    let userCurrency = 'USD';
+    let userRate = 1;
+    let activeFilter = 'all';
+    let clerk = null;
+    let pendingAuth = false;
+
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function addMessage(type, _emoji, content) {
+      const el          = document.getElementById('statusMessage');
+      const indicatorEl = document.getElementById('statusIndicator');
+      const contentEl   = document.getElementById('statusContent');
+
+      // Reset animation
+      el.classList.remove('status-visible', 'acknowledgment');
+      void el.offsetWidth;
+
+      if (type === 'acknowledgment') {
+        indicatorEl.innerHTML = '<div class="check-circle">✓</div>';
+        el.classList.add('acknowledgment');
+      } else {
+        indicatorEl.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div>';
+      }
+
+      contentEl.textContent = content;
+      el.classList.add('status-visible');
+    }
+
+    function updateProgress(value) {
+      progress = value;
+      document.getElementById('progressFill').style.width = value + '%';
+      document.getElementById('progressText').textContent = value;
+    }
+
+    function renderQuestion(question) {
+      const container = document.getElementById('questionContainer');
+      container.innerHTML = `
+        <div class="question-card">
+          <p class="question-label">Quick question</p>
+          <p class="question-text">${question.text}</p>
+          <div class="options">
+            ${question.options.map(opt => `
+              <button class="option-button" onclick="handleAnswer('${question.id}', '${opt.value}')">
+                <span class="option-emoji">${opt.emoji}</span>
+                <span class="option-label">${opt.label}</span>
+              </button>
+            `).join('')}
+          </div>
+          <div class="question-footer">
+            <button class="skip-button" onclick="handleSkip('${question.id}')">Skip →</button>
+            <div class="timer"><span id="timeLeft">${question.timeout / 1000}</span>s</div>
+          </div>
+        </div>
+      `;
+
+      let timeLeft = question.timeout / 1000;
+      if (questionTimer) clearInterval(questionTimer);
+      
+      questionTimer = setInterval(() => {
+        timeLeft -= 0.1;
+        const display = document.getElementById('timeLeft');
+        if (display) {
+          display.textContent = Math.ceil(timeLeft);
+        }
+        if (timeLeft <= 0) {
+          clearInterval(questionTimer);
+          handleSkip(question.id);
+        }
+      }, 100);
+    }
+
+    function clearQuestion() {
+      if (questionTimer) clearInterval(questionTimer);
+      document.getElementById('questionContainer').innerHTML = '';
+    }
+
+    async function handleAnswer(questionId, answer) {
+      answers[questionId] = answer;
+      clearQuestion();
+
+      if (questionId === 'geo') {
+        await continueAfterFirstQuestion(answer);
+      } else if (questionId === 'audience') {
+        await continueAfterSecondQuestion(answer);
+      }
+    }
+
+    async function handleSkip(questionId) {
+      if (!currentQuestion) return;
+      handleAnswer(questionId, currentQuestion.skipDefault);
+    }
+
+    async function startBrainstorming() {
+      const description = document.getElementById('businessDescription').value;
+
+      document.getElementById('businessDesc').textContent = description;
+      document.getElementById('inputStage').classList.add('hidden');
+      document.getElementById('thinkingStage').classList.add('active');
+
+      messages = [];
+      answers = {};
+
+      await simulateThinkingProcess();
+    }
+
+    async function simulateThinkingProcess() {
+      await wait(400);
+      addMessage('thinking', '📖', 'Reading your business concept...');
+      updateProgress(15);
+      await wait(900);
+      const rawDesc = document.getElementById('businessDescription').value.trim();
+      const preview = rawDesc.length > 55 ? rawDesc.slice(0, 52) + '...' : rawDesc;
+      addMessage('thinking', '💭', `Got it — "${preview}". Two quick questions to tailor your results...`);
+      updateProgress(25);
+      await wait(500);
+
+      currentQuestion = {
+        id: 'geo',
+        text: 'Where will you primarily operate?',
+        options: [
+          { value: 'global', label: 'Global',        emoji: '🌍' },
+          { value: 'us',     label: 'United States', emoji: '🇺🇸' },
+          { value: 'europe', label: 'Europe',         emoji: '🇪🇺' },
+          { value: 'asia',   label: 'Asia Pacific',   emoji: '🌏' },
+        ],
+        timeout: 8000,
+        skipDefault: 'global',
+      };
+      renderQuestion(currentQuestion);
+    }
+
+    async function continueAfterFirstQuestion(answer) {
+      const labels = { global: 'Global', us: 'United States', europe: 'Europe', asia: 'Asia Pacific' };
+      addMessage('acknowledgment', '✓', `${labels[answer]}. One more thing...`);
+      updateProgress(38);
+      await wait(400);
+
+      currentQuestion = {
+        id: 'audience',
+        text: "Who's your main customer?",
+        options: [
+          { value: 'b2b',  label: 'Businesses (B2B)', emoji: '👔' },
+          { value: 'b2c',  label: 'Consumers (B2C)',  emoji: '👥' },
+          { value: 'genz', label: 'Gen Z / Young',    emoji: '🎯' },
+          { value: 'both', label: 'Not sure yet',     emoji: '🤷' },
+        ],
+        timeout: 6000,
+        skipDefault: 'both',
+      };
+      renderQuestion(currentQuestion);
+    }
+
+    async function continueAfterSecondQuestion(answer) {
+      const labels = { b2b: 'B2B', b2c: 'B2C', genz: 'Gen Z', both: 'mixed audience' };
+      clearQuestion();
+      addMessage('acknowledgment', '✓', `Targeting ${labels[answer]}. On it...`);
+      updateProgress(48);
+      await wait(300);
+
+      // Auth check — must be logged in before we fire the API
+      if (!clerk || !clerk.user) {
+        sessionStorage.setItem('pendingDescription', document.getElementById('businessDescription').value);
+        sessionStorage.setItem('pendingAnswers', JSON.stringify(answers));
+        showAuthGate();
+        return;
+      }
+
+      const token = await clerk.session.getToken();
+      await runConsultation(token);
+    }
+
+    // OAuth return / auth-gate path — thin wrapper so the post-login handler
+    // can call back in without duplicating logic.
+    async function fetchAndShowResults(token) {
+      document.getElementById('authGate').classList.remove('active');
+      document.getElementById('thinkingStage').classList.add('active');
+      await runConsultation(token);
+    }
+
+    // Core engine: starts SSE stream, shows thinking messages while waiting for
+    // the first domain, then transitions to results and streams cards one by one.
+    async function runConsultation(token) {
+      const description = document.getElementById('businessDescription').value;
+
+      // Fetch pricing + exchange rate upfront for all common TLDs so cards
+      // can show prices the moment they appear — no extra wait after streaming.
+      userCurrency = detectUserCurrency();
+      const commonTlds = ['.com','.io','.app','.co','.ai','.dev','.store','.xyz','.me','.net','.org','.tech','.shop','.eu'];
+      const [prices, rate] = await Promise.all([
+        fetchDomainPrices(commonTlds),
+        fetchExchangeRate(userCurrency),
+      ]);
+      userRate  = rate;
+      lastPrices = prices;
+      lastPremiumPrices = {};
+
+      // Reset state for this consultation
+      lastSuggestions  = [];
+      lastAvailability = {};
+      activeFilter     = 'all';
+
+      // Thinking messages shown while Claude is working
+      const thinkingMsgs = [
+        [700,  '🧠', 'Consulting my domain expertise...'],
+        [2000, '✨', 'Brainstorming creative name combinations...'],
+        [2500, '🎨', 'Testing word patterns and phonetics...'],
+        [2500, '🔍', 'Checking brand clarity and memorability...'],
+        [2000, '🔎', 'Verifying real-time availability...'],
+      ];
+
+      let firstDomainReceived = false;
+      let thinkingDone = false;
+
+      // Run thinking animation concurrently with the stream
+      const thinkingLoop = (async () => {
+        let progress = 55;
+        for (const [delay, emoji, text] of thinkingMsgs) {
+          if (firstDomainReceived) break;
+          await wait(delay);
+          if (firstDomainReceived) break;
+          addMessage('thinking', emoji, text);
+          progress = Math.min(progress + 8, 88);
+          updateProgress(progress);
+        }
+        thinkingDone = true;
+      })();
+
+      // Prepare results section (hidden until first domain)
+      const desc        = description.trim();
+      const descPreview = desc.length > 50 ? desc.slice(0, 47) + '...' : desc;
+      document.getElementById('resultsSubheading').textContent =
+        `Finding available domains for "${descPreview}"...`;
+      document.getElementById('availabilitySummary').innerHTML =
+        `<strong>0</strong> of 10 domains found`;
+      document.querySelectorAll('.filter-pill').forEach((p, i) => p.classList.toggle('active', i === 0));
+      document.getElementById('domainsGrid').innerHTML = '';
+
+      let streamError = null;
+      let totalFound  = 0;
+
+      try {
+        await streamSuggestions(description, answers, token, (domain, count) => {
+          // First domain received — transition from thinking to results
+          if (!firstDomainReceived) {
+            firstDomainReceived = true;
+            updateProgress(100);
+            document.getElementById('thinkingStage').classList.remove('active');
+            const resultsEl = document.getElementById('resultsStage');
+            resultsEl.classList.add('active');
+            resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+
+          // Hide the searching indicator when a new domain arrives
+          document.getElementById('searchingIndicator').classList.remove('active');
+
+          // Remove skeleton thinking card before appending the real one
+          removeThinkingCard();
+
+          // Add to state
+          lastSuggestions.push(domain);
+          lastAvailability[domain.name + domain.tld] = true;
+          totalFound = count;
+
+          // Update live counter
+          document.getElementById('availabilitySummary').innerHTML =
+            `<strong>${count}</strong> of 10 domains found`;
+
+          // Append card with entrance animation
+          appendDomainCard(domain);
+
+          // Show skeleton card while waiting for the next domain
+          if (count < 10) showThinkingCard();
+        }, (submitted, remaining) => {
+          // Show searching indicator while Claude is nudged to find more
+          document.getElementById('searchingText').textContent =
+            `Found ${submitted} so far — searching for ${remaining} more…`;
+          document.getElementById('searchingIndicator').classList.add('active');
+        });
+      } catch (err) {
+        streamError = err;
+      }
+
+      if (streamError) {
+        if (streamError.status === 402) {
+          document.getElementById('thinkingStage').classList.remove('active');
+          document.getElementById('resultsStage').classList.remove('active');
+          showUpgradeModal();
+          return;
+        }
+        showResultsError('AI suggestions are unavailable right now. Please try again in a moment.');
+        return;
+      }
+
+      // All domains received — finalise display
+      document.getElementById('searchingIndicator').classList.remove('active');
+      removeThinkingCard();
+      document.getElementById('resultsSubheading').textContent =
+        `${totalFound} personalised suggestions for "${descPreview}"`;
+      document.getElementById('availabilitySummary').innerHTML =
+        `<strong>${totalFound}</strong> of ${totalFound} domains available`;
+
+      // Sort cards by score and re-render
+      lastSuggestions = [...lastSuggestions].sort((a, b) =>
+        computeDomainScore(b, lastAvailability).score - computeDomainScore(a, lastAvailability).score
+      );
+      renderDomainCards(lastSuggestions, lastAvailability);
+    }
+
+    // ── Domain Score ───────────────────────────────────────────────────────────
+
+    function computeDomainScore(s, avail) {
+      let score = 0;
+      const breakdown = [];
+
+      // TLD authority (22pts)
+      const tldMap = { '.com': 22, '.io': 17, '.ai': 17, '.co': 14, '.app': 14, '.store': 14, '.dev': 14 };
+      const tldPts = tldMap[s.tld] ?? 8;
+      score += tldPts;
+      breakdown.push({ label: 'TLD authority', pts: tldPts, max: 22 });
+
+      // Availability (22pts)
+      const availVal = avail[s.name + s.tld];
+      const availPts = availVal === true ? 22 : availVal === false ? 0 : 8;
+      score += availPts;
+      breakdown.push({ label: 'Availability', pts: availPts, max: 22 });
+
+      // Length (20pts)
+      const len = s.name.length;
+      const lenPts = len <= 7 ? 20 : len <= 10 ? 15 : len <= 13 ? 10 : 5;
+      score += lenPts;
+      breakdown.push({ label: 'Length', pts: lenPts, max: 20 });
+
+      // Cleanliness (16pts) – no hyphens or numbers
+      const hasHyphen = s.name.includes('-');
+      const hasNumber = /\d/.test(s.name);
+      const cleanPts = (!hasHyphen && !hasNumber) ? 16 : (hasHyphen && hasNumber) ? 0 : 8;
+      score += cleanPts;
+      breakdown.push({ label: 'Cleanliness', pts: cleanPts, max: 16 });
+
+      // Pronounceability (12pts) – healthy vowel ratio
+      const vowelCount = (s.name.match(/[aeiou]/gi) || []).length;
+      const ratio = vowelCount / s.name.length;
+      const pronPts = (ratio >= 0.25 && ratio <= 0.5) ? 12 : 6;
+      score += pronPts;
+      breakdown.push({ label: 'Pronounceable', pts: pronPts, max: 12 });
+
+      // Keyword clarity (8pts)
+      const stylePts = s.style === 'keyword' ? 8 : s.style === 'hybrid' ? 4 : 2;
+      score += stylePts;
+      breakdown.push({ label: 'Keyword clarity', pts: stylePts, max: 8 });
+
+      return { score, breakdown };
+    }
+
+    function renderScorePill(s, avail) {
+      const { score, breakdown } = computeDomainScore(s, avail);
+      const cls = score >= 80 ? 'score-green' : score >= 60 ? 'score-amber' : 'score-red';
+      const rows = breakdown.map(r =>
+        `<div class="score-tooltip-row"><span>${r.label}</span><span>${r.pts}/${r.max}</span></div>`
+      ).join('');
+      return `<span class="score-pill ${cls}" title="Domain Score — hover to see breakdown"><span style="font-size:9px;opacity:0.65;margin-right:2px">SCORE</span>${score}<span style="font-size:9px;opacity:0.5">/100</span><div class="score-tooltip"><div class="score-tooltip-title">Domain Score: ${score}/100</div>${rows}</div></span>`;
+    }
+
+    // ── API helpers ────────────────────────────────────────────────────────────
+
+    // SSE-based streaming: calls onDomain for each confirmed-available domain
+    // as Claude finds it. Returns total count when stream ends.
+    async function streamSuggestions(description, answersObj, token, onDomain, onSearching) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ description, answers: answersObj }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const error = new Error(err.error || `HTTP ${res.status}`);
+        error.status = res.status;
+        throw error;
+      }
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let   buffer        = '';
+      let   count         = 0;
+      let   lastDomainAt  = 0;
+      const MIN_GAP_MS    = 350; // ensure thinking card is always visible between cards
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep incomplete line for next chunk
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const json = line.slice(6).trim();
+          if (!json) continue;
+          try {
+            const event = JSON.parse(json);
+            if (event.type === 'domain') {
+              // Enforce a minimum gap so the thinking card is always visible
+              const wait = MIN_GAP_MS - (Date.now() - lastDomainAt);
+              if (lastDomainAt && wait > 0) await new Promise(r => setTimeout(r, wait));
+              count++;
+              lastDomainAt = Date.now();
+              onDomain(event.domain, count);
+            } else if (event.type === 'searching') {
+              if (onSearching) onSearching(event.submitted, event.remaining);
+            } else if (event.type === 'error') {
+              const error = new Error(event.message || 'Stream error');
+              error.status = event.status || 500;
+              throw error;
+            }
+          } catch (e) {
+            // Re-throw real errors; ignore JSON parse noise
+            if (e.status || (e.message && !e.message.includes('JSON'))) throw e;
+          }
+        }
+      }
+      return count;
+    }
+
+    async function checkDomainAvailability(domains) {
+      try {
+        const res = await fetch('/api/check-domains', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domains }),
+        });
+        if (!res.ok) return { results: {}, premiumPrices: {} };
+        const data = await res.json();
+        return { results: data.results || {}, premiumPrices: data.premiumPrices || {} };
+      } catch {
+        return { results: {}, premiumPrices: {} };
+      }
+    }
+
+    // ── Currency helpers ────────────────────────────────────────────────────
+
+    function detectUserCurrency() {
+      try {
+        const locale = navigator.language || '';
+        const region = locale.includes('-') ? locale.split('-').pop().toUpperCase() : '';
+        const map = {
+          US:'USD', CA:'CAD', AU:'AUD', NZ:'NZD',
+          GB:'GBP',
+          DE:'EUR', FR:'EUR', IT:'EUR', ES:'EUR', NL:'EUR', BE:'EUR',
+          AT:'EUR', PT:'EUR', IE:'EUR', FI:'EUR', GR:'EUR', LU:'EUR',
+          JP:'JPY', CN:'CNY', IN:'INR', SG:'SGD', HK:'HKD',
+          KR:'KRW', TH:'THB', MY:'MYR', ID:'IDR', PH:'PHP',
+          CH:'CHF', SE:'SEK', NO:'NOK', DK:'DKK', PL:'PLN',
+          CZ:'CZK', HU:'HUF', RO:'RON',
+          MX:'MXN', BR:'BRL', AR:'ARS', CL:'CLP',
+          ZA:'ZAR', NG:'NGN', KE:'KES',
+          SA:'SAR', AE:'AED', IL:'ILS', TR:'TRY',
+        };
+        if (map[region]) return map[region];
+        // Fallback: timezone
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        if (tz.startsWith('Europe/London') || tz.startsWith('Europe/Belfast')) return 'GBP';
+        if (tz.startsWith('Europe/'))   return 'EUR';
+        if (tz.startsWith('Asia/Tokyo')) return 'JPY';
+        if (tz.startsWith('Asia/Kolkata') || tz.startsWith('Asia/Calcutta')) return 'INR';
+        if (tz.startsWith('Australia/')) return 'AUD';
+        if (tz.startsWith('America/') && /Toronto|Vancouver|Montreal|Halifax|Winnipeg|Edmonton/.test(tz)) return 'CAD';
+      } catch {}
+      return 'USD';
+    }
+
+    async function fetchExchangeRate(currency) {
+      if (currency === 'USD') return 1;
+      try {
+        const res = await fetch(`https://api.exchangerate-api.com/v4/latest/USD`);
+        if (!res.ok) return 1;
+        const data = await res.json();
+        return data.rates[currency] ?? 1;
+      } catch {
+        return 1;
+      }
+    }
+
+    function formatPrice(usdAmount, rate, currency) {
+      const amount = usdAmount * rate;
+      return new Intl.NumberFormat(navigator.language || 'en-US', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+        minimumFractionDigits: 0,
+      }).format(amount);
+    }
+
+    // Compact version: uses narrow symbol ($, £, €) with no decimals for whole numbers
+    function compactPrice(usdAmount, rate, currency) {
+      const amount = usdAmount * rate;
+      return new Intl.NumberFormat(navigator.language || 'en-US', {
+        style: 'currency',
+        currency,
+        currencyDisplay: 'narrowSymbol',
+        maximumFractionDigits: 0,
+        minimumFractionDigits: 0,
+      }).format(amount);
+    }
+
+    async function fetchDomainPrices(tlds) {
+      try {
+        const res = await fetch('/api/domain-price', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tlds }),
+        });
+        if (!res.ok) return {};
+        const data = await res.json();
+        return data.prices || {};
+      } catch {
+        return {};
+      }
+    }
+
+    // ── Render results ─────────────────────────────────────────────────────────
+
+    function sortSuggestions(suggestions, availability) {
+      // All streaming domains are confirmed available — sort by score only
+      return [...suggestions].sort((a, b) =>
+        computeDomainScore(b, availability).score - computeDomainScore(a, availability).score
+      );
+    }
+
+    // Build the inner HTML for a single domain card.
+    // Called both during streaming (one card at a time) and during re-renders.
+    function buildCardHTML(s, availability) {
+      const fullDomain  = s.name + s.tld;
+      const avail       = availability[fullDomain];
+      const availClass  = avail === false ? 'taken' : avail === true ? 'available' : 'unknown';
+      const availLabel  = avail === false ? '✗ Taken' : avail === true ? '✓ Available' : '? Unknown';
+      const registerUrl = `https://www.namecheap.com/domains/registration/results/?domain=${encodeURIComponent(fullDomain)}`;
+      const whoisUrl    = `https://www.whois.com/whois/${encodeURIComponent(fullDomain)}`;
+      const namechkUrl  = `https://namechk.com/${encodeURIComponent(s.name)}`;
+      const premiumUsd  = lastPremiumPrices[fullDomain];
+      const stdPrice    = lastPrices[s.tld];
+      const isPremium   = premiumUsd != null;
+      const priceLoaded = stdPrice != null || isPremium;
+      const ctaPrice    = isPremium
+        ? `${compactPrice(premiumUsd, userRate, userCurrency)}/yr ⭐`
+        : stdPrice != null ? `~${compactPrice(stdPrice, userRate, userCurrency)}/yr` : null;
+
+      // CTA label: show price when available, skeleton dots while loading
+      const registerLabel = ctaPrice
+        ? `Register for ${ctaPrice}`
+        : priceLoaded ? 'Register on Namecheap →' : 'Register on Namecheap →';
+      const checkLabel = ctaPrice
+        ? `Check availability → ${ctaPrice}`
+        : 'Check availability →';
+
+      return `
+        <div class="domain-card-header">
+          <div class="domain-name">
+            <span>${escapeHtml(s.name)}<span class="tld">${escapeHtml(s.tld)}</span></span>
+            <button class="copy-btn" onclick="copyDomain('${escapeHtml(fullDomain)}', this)" title="Copy to clipboard">⎘</button>
+          </div>
+          ${renderScorePill(s, availability)}
+        </div>
+        <div class="domain-badges">
+          <span class="badge style-badge ${s.style}">${capitalise(s.style)}</span>
+        </div>
+        <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
+        <div class="domain-meta">
+          <a href="${namechkUrl}" target="_blank" rel="noopener" class="social-link">@ Social handles</a>
+        </div>
+        ${avail === true
+          ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">${registerLabel}</a>`
+          : avail === false
+          ? ''
+          : `<a class="check-link" href="${whoisUrl}" target="_blank" rel="noopener">${checkLabel}</a>`}
+      `;
+    }
+
+    // Append a single card to the grid with an entrance animation.
+    // Called during streaming as each confirmed-available domain arrives.
+    function appendDomainCard(s) {
+      const grid = document.getElementById('domainsGrid');
+      const div  = document.createElement('div');
+      div.className = 'domain-card card-entering';
+      div.innerHTML = buildCardHTML(s, lastAvailability);
+      grid.appendChild(div);
+      // Double rAF ensures the browser has painted the entering state
+      requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('card-entering')));
+    }
+
+    // Show a skeleton placeholder card in the grid while the next domain is being generated.
+    function showThinkingCard() {
+      removeThinkingCard();
+      const grid = document.getElementById('domainsGrid');
+      const div  = document.createElement('div');
+      div.id        = 'thinkingCard';
+      div.className = 'domain-card domain-card-skeleton card-entering';
+      div.innerHTML = `
+        <div class="domain-card-header">
+          <div class="skeleton-line skeleton-domain"></div>
+          <div class="skeleton-line skeleton-score"></div>
+        </div>
+        <div><div class="skeleton-line skeleton-badge"></div></div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+          <div class="skeleton-line skeleton-text w-full"></div>
+          <div class="skeleton-line skeleton-text w-4-5"></div>
+          <div class="skeleton-line skeleton-text w-3-5"></div>
+        </div>
+        <div class="skeleton-line skeleton-btn"></div>
+      `;
+      grid.appendChild(div);
+      requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('card-entering')));
+    }
+
+    function removeThinkingCard() {
+      const card = document.getElementById('thinkingCard');
+      if (card) card.remove();
+    }
+
+    // Full re-render of the grid (used for filter changes and post-stream sort).
+    function renderDomainCards(suggestions, availability) {
+      const grid = document.getElementById('domainsGrid');
+
+      let filtered = suggestions;
+      if (activeFilter === 'available') {
+        filtered = suggestions.filter(s => availability[s.name + s.tld] === true);
+      } else if (['brandable', 'keyword', 'hybrid'].includes(activeFilter)) {
+        filtered = suggestions.filter(s => s.style === activeFilter);
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="results-error" style="grid-column:1/-1"><p>No domains match this filter.</p></div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(s =>
+        `<div class="domain-card ${availability[s.name + s.tld] === false ? 'taken' : ''}">${buildCardHTML(s, availability)}</div>`
+      ).join('');
+    }
+
+    function showResults(suggestions, availability, prices = {}, premiumPrices = {}) {
+      document.getElementById('thinkingStage').classList.remove('active');
+
+      lastSuggestions  = [...suggestions].sort((a, b) =>
+        computeDomainScore(b, availability).score - computeDomainScore(a, availability).score);
+      lastAvailability = availability;
+      lastPrices       = prices;
+      lastPremiumPrices = premiumPrices;
+      activeFilter     = 'all';
+
+      document.querySelectorAll('.filter-pill').forEach((p, i) => p.classList.toggle('active', i === 0));
+
+      const desc        = document.getElementById('businessDescription').value.trim();
+      const descPreview = desc.length > 50 ? desc.slice(0, 47) + '...' : desc;
+      document.getElementById('resultsSubheading').textContent =
+        `${suggestions.length} personalised suggestions for "${descPreview}"`;
+
+      const availableCount = suggestions.filter(s => availability[s.name + s.tld] === true).length;
+      document.getElementById('availabilitySummary').innerHTML =
+        `<strong>${availableCount}</strong> of ${suggestions.length} domains available`;
+
+      renderDomainCards(lastSuggestions, lastAvailability);
+
+      const resultsEl = document.getElementById('resultsStage');
+      resultsEl.classList.add('active');
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function filterResults(type, btn) {
+      activeFilter = type;
+      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      renderDomainCards(lastSuggestions, lastAvailability);
+    }
+
+    function copyDomain(domain, btn) {
+      navigator.clipboard.writeText(domain).then(() => {
+        btn.textContent = '✓';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = '⎘';
+          btn.classList.remove('copied');
+        }, 1500);
+      });
+    }
+
+    async function regenerateSuggestions() {
+      document.getElementById('resultsStage').classList.remove('active');
+      document.getElementById('thinkingStage').classList.add('active');
+
+      addMessage('thinking', '🔄', 'Finding fresh available domains...');
+      updateProgress(50);
+
+      const token       = clerk?.user ? await clerk.session.getToken() : null;
+      const description = document.getElementById('businessDescription').value;
+
+      // Reset state
+      lastSuggestions   = [];
+      lastAvailability  = {};
+      lastPremiumPrices = {};
+      activeFilter      = 'all';
+
+      // Prepare the results grid
+      document.getElementById('domainsGrid').innerHTML = '';
+      document.querySelectorAll('.filter-pill').forEach((p, i) => p.classList.toggle('active', i === 0));
+      const desc        = description.trim();
+      const descPreview = desc.length > 50 ? desc.slice(0, 47) + '...' : desc;
+      document.getElementById('availabilitySummary').innerHTML = `<strong>0</strong> of 10 domains found`;
+
+      let firstDomain = false;
+      let totalFound  = 0;
+      let streamError = null;
+
+      try {
+        await streamSuggestions(description, answers, token, (domain, count) => {
+          if (!firstDomain) {
+            firstDomain = true;
+            updateProgress(100);
+            document.getElementById('thinkingStage').classList.remove('active');
+            const resultsEl = document.getElementById('resultsStage');
+            resultsEl.classList.add('active');
+            resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+          document.getElementById('searchingIndicator').classList.remove('active');
+          removeThinkingCard();
+          lastSuggestions.push(domain);
+          lastAvailability[domain.name + domain.tld] = true;
+          totalFound = count;
+          document.getElementById('availabilitySummary').innerHTML =
+            `<strong>${count}</strong> of 10 domains found`;
+          appendDomainCard(domain);
+          if (count < 10) showThinkingCard();
+        }, (submitted, remaining) => {
+          document.getElementById('searchingText').textContent =
+            `Found ${submitted} so far — searching for ${remaining} more…`;
+          document.getElementById('searchingIndicator').classList.add('active');
+        });
+      } catch (err) {
+        streamError = err;
+      }
+
+      if (streamError) {
+        if (streamError.status === 402) {
+          document.getElementById('thinkingStage').classList.remove('active');
+          document.getElementById('resultsStage').classList.remove('active');
+          showUpgradeModal();
+          return;
+        }
+        showResultsError('Failed to generate fresh suggestions. Please try again.');
+        return;
+      }
+
+      document.getElementById('searchingIndicator').classList.remove('active');
+      removeThinkingCard();
+      document.getElementById('resultsSubheading').textContent =
+        `${totalFound} personalised suggestions for "${descPreview}"`;
+      document.getElementById('availabilitySummary').innerHTML =
+        `<strong>${totalFound}</strong> of ${totalFound} domains available`;
+
+      // Final sort by score
+      lastSuggestions = [...lastSuggestions].sort((a, b) =>
+        computeDomainScore(b, lastAvailability).score - computeDomainScore(a, lastAvailability).score
+      );
+      renderDomainCards(lastSuggestions, lastAvailability);
+    }
+
+    function showResultsError(message) {
+      document.getElementById('thinkingStage').classList.remove('active');
+
+      const grid = document.getElementById('domainsGrid');
+      grid.innerHTML = `
+        <div class="results-error" style="grid-column: 1 / -1;">
+          <p>⚠️ ${escapeHtml(message)}</p>
+        </div>
+      `;
+
+      const resultsEl = document.getElementById('resultsStage');
+      resultsEl.classList.add('active');
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function resetDemo() {
+      document.getElementById('resultsStage').classList.remove('active');
+      document.getElementById('thinkingStage').classList.remove('active');
+      document.getElementById('inputStage').classList.remove('hidden');
+      // Reset the single status message
+      const el = document.getElementById('statusMessage');
+      el.classList.remove('status-visible', 'acknowledgment');
+      document.getElementById('statusIndicator').innerHTML = '';
+      document.getElementById('statusContent').textContent = '';
+      document.getElementById('questionContainer').innerHTML = '';
+      document.getElementById('domainsGrid').innerHTML = '';
+      updateProgress(0);
+      answers = {};
+      currentQuestion = null;
+      if (questionTimer) clearInterval(questionTimer);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── Auth gate ──────────────────────────────────────────────────────────────
+
+    function showAuthGate() {
+      document.getElementById('thinkingStage').classList.remove('active');
+      document.getElementById('authGate').classList.add('active');
+      pendingAuth = true;
+
+      const container = document.getElementById('clerk-auth-container');
+
+      if (clerk) {
+        // UI components are not available in this Clerk CDN build —
+        // use redirect-based sign-in instead (confirmed to work)
+        window._authFallback = () => {
+          clerk.redirectToSignIn({
+            redirectUrl: window.location.origin + '/',
+          });
+        };
+        container.innerHTML = `
+          <button onclick="_authFallback()"
+                  style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;padding:16px 40px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:0 8px 24px rgba(99,102,241,0.35);transition:all 0.2s;"
+                  onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+            Sign in to continue →
+          </button>`;
+      } else {
+        // Clerk failed to load entirely — offer a page reload
+        container.innerHTML = `
+          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-secondary);text-align:center;">
+            <p style="margin-bottom:16px;">Sign-in couldn't load.<br>This is usually caused by an ad-blocker or network issue.</p>
+            <button onclick="window.location.reload()"
+                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;">
+              Reload &amp; try again
+            </button>
+          </div>`;
+      }
+    }
+
+    function hideAuthGate() {
+      document.getElementById('authGate').classList.remove('active');
+      pendingAuth = false;
+      // Unmount Clerk component to avoid duplicate mount
+      try { clerk.unmountSignIn(document.getElementById('clerk-auth-container')); } catch {}
+    }
+
+    // ── Upgrade modal ──────────────────────────────────────────────────────────
+
+    function showUpgradeModal() {
+      document.getElementById('upgradeModal').classList.add('active');
+    }
+
+    function closeUpgradeModal() {
+      document.getElementById('upgradeModal').classList.remove('active');
+    }
+
+    async function startCheckout() {
+      if (!clerk?.user) return;
+      try {
+        const token = await clerk.session.getToken();
+        const res = await fetch('/api/create-checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ userId: clerk.user.id }),
+        });
+        const data = await res.json();
+        if (data.url) window.location.href = data.url;
+      } catch (err) {
+        console.error('Checkout error:', err);
+      }
+    }
+
+    // ── Clerk initialisation ───────────────────────────────────────────────────
+
+    async function initClerk() {
+      try {
+        clerk = window.Clerk;
+        const demoUrl = window.location.origin + '/';
+        // forceRedirectUrl overrides dashboard & component-level settings —
+        // the only way to guarantee OAuth redirects back to the homepage
+        await clerk.load({
+          forceRedirectUrl: demoUrl,
+        });
+
+        // Listen for auth state changes (fires after login without page reload)
+        clerk.addListener(async ({ user }) => {
+          // Use pendingAuth flag OR sessionStorage as fallback (covers soft reloads)
+          const hasPending = pendingAuth || !!sessionStorage.getItem('pendingDescription');
+          if (user && hasPending) {
+            const savedDesc    = sessionStorage.getItem('pendingDescription');
+            const savedAnswers = sessionStorage.getItem('pendingAnswers');
+            sessionStorage.removeItem('pendingDescription');
+            sessionStorage.removeItem('pendingAnswers');
+
+            if (savedDesc) {
+              document.getElementById('businessDescription').value = savedDesc;
+              document.getElementById('businessDesc').textContent  = savedDesc;
+            }
+
+            hideAuthGate();
+
+            if (savedAnswers) {
+              answers = JSON.parse(savedAnswers);
+              const token = await clerk.session.getToken();
+              await fetchAndShowResults(token);
+            }
+          }
+        });
+
+        // Check if user logged in via OAuth redirect and has pending results
+        if (clerk.user) {
+          const desc = sessionStorage.getItem('pendingDescription');
+          if (desc) {
+            const savedAnswers = sessionStorage.getItem('pendingAnswers');
+            sessionStorage.removeItem('pendingDescription');
+            sessionStorage.removeItem('pendingAnswers');
+
+            document.getElementById('businessDescription').value = desc;
+            document.getElementById('businessDesc').textContent  = desc;
+            document.getElementById('inputStage').classList.add('hidden');
+            document.getElementById('thinkingStage').classList.add('active');
+
+            if (savedAnswers) {
+              answers = JSON.parse(savedAnswers);
+              addMessage('acknowledgment', '', '✨ Welcome back! Loading your results...');
+              const token = await clerk.session.getToken();
+              await fetchAndShowResults(token);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Clerk failed to load:', err);
+      }
+    }
+
+    // Check for ?upgraded=true param on return from Stripe
+    if (new URLSearchParams(window.location.search).get('upgraded') === 'true') {
+      history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => alert('🎉 Welcome to Pro! Your account has been upgraded.'), 500);
+    }
+
+    // If we're returning from an auth redirect, hide the input stage immediately
+    // (before the async clerk.load() resolves) so it never flashes on screen.
+    if (sessionStorage.getItem('pendingDescription')) {
+      document.getElementById('inputStage').classList.add('hidden');
+    }
+
+    // Init Clerk when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initClerk);
+    } else {
+      initClerk();
+    }
+
+    // ── Utilities ──────────────────────────────────────────────────────────────
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function capitalise(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
   </script>
 </body>
 </html>

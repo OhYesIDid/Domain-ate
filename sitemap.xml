@@ -2,15 +2,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://domain-ate.com/</loc>
-    <lastmod>2026-03-09</lastmod>
+    <lastmod>2026-03-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://domain-ate.com/demo</loc>
-    <lastmod>2026-03-09</lastmod>
+    <loc>https://domain-ate.com/waitlist</loc>
+    <lastmod>2026-03-16</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.4</priority>
   </url>
   <url>
     <loc>https://domain-ate.com/blog/</loc>

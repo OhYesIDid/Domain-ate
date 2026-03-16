@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where node)",
+      "Bash(node --version)",
+      "mcp__Claude_Preview__preview_start",
+      "WebSearch",
+      "Bash(ls /c/Users/tommy/Documents/GitHub/Domain-ate/*.html)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git mv:*)"
+    ]
+  }
+}
