@@ -1,7 +1,8 @@
 {
   "cleanUrls": true,
   "redirects": [
-    { "source": "/demo",     "destination": "/", "permanent": true },
-    { "source": "/demo.html","destination": "/", "permanent": true }
+    { "source": "/index.html", "destination": "/", "permanent": true },
+    { "source": "/demo",       "destination": "/", "permanent": true },
+    { "source": "/demo.html",  "destination": "/", "permanent": true }
   ]
 }
