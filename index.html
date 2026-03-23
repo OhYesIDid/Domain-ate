@@ -853,7 +853,7 @@
       50%       { opacity: 0.7; }
     }
     .skeleton-domain { height: 22px; width: 55%; }
-    .skeleton-score  { height: 48px; width: 44px; border-radius: 6px; }
+    .skeleton-score  { height: 22px; width: 42px; border-radius: 20px; }
     .skeleton-badge  { height: 20px; width: 80px; border-radius: 6px; }
     .skeleton-text   { height: 13px; }
     .skeleton-text.w-full { width: 100%; }
@@ -1044,33 +1044,25 @@
       gap: 8px;
     }
 
-    /* ── Domain Score (large typographic) ──────────────── */
-    .score-display {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
+    /* ── Domain Score pill ──────────────────────────────── */
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: default;
+      position: relative;
       flex-shrink: 0;
-      line-height: 1;
+      white-space: nowrap;
+      align-self: flex-start;
     }
-    .score-number {
-      font-family: 'DM Mono', monospace;
-      font-size: 38px;
-      font-weight: 600;
-      line-height: 1;
-    }
-    .score-denom {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      opacity: 0.45;
-      margin-top: 2px;
-      text-align: right;
-    }
-    .score-green .score-number { color: #10b981; }
-    .score-amber .score-number { color: #f59e0b; }
-    .score-red   .score-number { color: #ef4444; }
-    .score-green .score-denom  { color: #10b981; }
-    .score-amber .score-denom  { color: #f59e0b; }
-    .score-red   .score-denom  { color: #ef4444; }
+    .score-pill.score-green { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+    .score-pill.score-amber { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+    .score-pill.score-red   { background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
 
     /* ── Domain meta row ─────── */
     .domain-meta {
@@ -1753,9 +1745,9 @@
     }
 
     function renderScorePill(s, avail) {
-      const { score } = computeDomainScore(s, avail);
+      const { score, breakdown } = computeDomainScore(s, avail);
       const cls = score >= 80 ? 'score-green' : score >= 60 ? 'score-amber' : 'score-red';
-      return `<div class="score-display ${cls}"><span class="score-number">${score}</span><span class="score-denom">/100</span></div>`;
+      return `<span class="score-pill ${cls}"><span style="font-size:9px;opacity:0.65;margin-right:2px">SCORE</span>${score}<span style="font-size:9px;opacity:0.5">/100</span></span>`;
     }
 
     // ── API helpers ────────────────────────────────────────────────────────────
@@ -1889,15 +1881,15 @@
       }).format(amount);
     }
 
-    // Compact version: uses narrow symbol ($, £, €) with no decimals for whole numbers
+    // Compact version: uses narrow symbol ($, £, €) always to 2 decimal places
     function compactPrice(usdAmount, rate, currency) {
       const amount = usdAmount * rate;
       return new Intl.NumberFormat(navigator.language || 'en-US', {
         style: 'currency',
         currency,
         currencyDisplay: 'narrowSymbol',
-        maximumFractionDigits: 0,
-        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+        minimumFractionDigits: 2,
       }).format(amount);
     }
 
@@ -1941,7 +1933,7 @@
       const priceLoaded = stdPrice != null || isPremium;
       const ctaPrice    = isPremium
         ? `${compactPrice(premiumUsd, userRate, userCurrency)}/yr ⭐`
-        : stdPrice != null ? `~${compactPrice(stdPrice, userRate, userCurrency)}/yr` : null;
+        : stdPrice != null ? `${compactPrice(stdPrice, userRate, userCurrency)}/yr` : null;
 
       // CTA label: show price when available, skeleton dots while loading
       const registerLabel = ctaPrice
