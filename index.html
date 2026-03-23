@@ -702,35 +702,18 @@
       gap: 4px;
       min-width: 0;
       flex: 1;
+      overflow: hidden;
     }
     /* Name + TLD are an unbreakable unit — never ellipse the TLD */
     .domain-name > span:first-child {
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       min-width: 0;
     }
     .domain-name .tld {
       color: var(--accent-light);
     }
-
-    .domain-badges {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .badge {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      font-weight: 500;
-      padding: 3px 8px;
-      border-radius: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .style-badge.brandable  { background: rgba(99,102,241,0.15); color: #a78bfa; border: 1px solid rgba(99,102,241,0.3); }
-    .style-badge.keyword    { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
-    .style-badge.hybrid     { background: rgba(236,72,153,0.15); color: #f472b6; border: 1px solid rgba(236,72,153,0.3); }
 
     .avail-badge.checking   { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
     .avail-badge.available  { background: rgba(16,185,129,0.15);  color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
@@ -825,36 +808,7 @@
       font-size: 16px;
     }
 
-    /* ── Filter bar ───────────────────────────────────────────── */
-    .filter-bar {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 24px;
-    }
-    .filter-pill {
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      padding: 6px 16px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .filter-pill:hover {
-      border-color: var(--accent);
-      color: var(--text-primary);
-    }
-    .filter-pill.active {
-      background: rgba(99,102,241,0.15);
-      border-color: var(--accent);
-      color: var(--accent-light);
-    }
-
-    /* ── Searching indicator ────────────────────────────────── */
+/* ── Searching indicator ────────────────────────────────── */
     .searching-indicator {
       display: none;
       align-items: center;
@@ -899,7 +853,7 @@
       50%       { opacity: 0.7; }
     }
     .skeleton-domain { height: 22px; width: 55%; }
-    .skeleton-score  { height: 22px; width: 42px; border-radius: 20px; }
+    .skeleton-score  { height: 48px; width: 44px; border-radius: 6px; }
     .skeleton-badge  { height: 20px; width: 80px; border-radius: 6px; }
     .skeleton-text   { height: 13px; }
     .skeleton-text.w-full { width: 100%; }
@@ -922,21 +876,7 @@
     }
 
     /* ── Copy button ─────────────────────────────────────────── */
-    .copy-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-muted);
-      padding: 2px 6px;
-      font-size: 15px;
-      line-height: 1;
-      transition: color 0.2s;
-      flex-shrink: 0;
-    }
-    .copy-btn:hover { color: var(--accent-light); }
-    .copy-btn.copied { color: var(--success); }
-
-    /* ── Results action buttons ──────────────────────────────── */
+/* ── Results action buttons ──────────────────────────────── */
     .results-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -1104,61 +1044,35 @@
       gap: 8px;
     }
 
-    /* ── Domain Score pill ──────────────────────────────── */
-    .score-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 2px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: help;
-      position: relative;
+    /* ── Domain Score (large typographic) ──────────────── */
+    .score-display {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
       flex-shrink: 0;
-      white-space: nowrap;
-      align-self: flex-start;
+      line-height: 1;
     }
-    .score-pill.score-green { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
-    .score-pill.score-amber { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
-    .score-pill.score-red   { background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
-
-    .score-tooltip {
-      display: none;
-      position: absolute;
-      bottom: calc(100% + 8px);
-      right: 0;
-      background: #1a2235;
-      border: 1px solid var(--border-bright);
-      border-radius: 10px;
-      padding: 12px;
-      width: 210px;
-      z-index: 20;
+    .score-number {
+      font-family: 'DM Mono', monospace;
+      font-size: 38px;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .score-denom {
       font-family: 'DM Mono', monospace;
       font-size: 11px;
-      color: var(--text-secondary);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      text-align: left;
+      opacity: 0.45;
+      margin-top: 2px;
+      text-align: right;
     }
-    .score-pill:hover .score-tooltip { display: block; }
-    .score-tooltip-title {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-primary);
-      margin-bottom: 8px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid var(--border);
-    }
-    .score-tooltip-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 3px 0;
-      color: var(--text-muted);
-    }
-    .score-tooltip-row span:last-child { color: var(--text-secondary); }
+    .score-green .score-number { color: #10b981; }
+    .score-amber .score-number { color: #f59e0b; }
+    .score-red   .score-number { color: #ef4444; }
+    .score-green .score-denom  { color: #10b981; }
+    .score-amber .score-denom  { color: #f59e0b; }
+    .score-red   .score-denom  { color: #ef4444; }
 
-    /* ── Domain meta row (price + social handle) ─────── */
+    /* ── Domain meta row ─────── */
     .domain-meta {
       display: flex;
       align-items: center;
@@ -1170,25 +1084,6 @@
     }
     .price-val { color: var(--text-secondary); }
     .price-val.premium-price { color: #f59e0b; }
-    .social-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-family: Inter, system-ui, sans-serif;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-decoration: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 4px 10px;
-      transition: all 0.2s;
-    }
-    .social-link:hover {
-      color: var(--accent-light);
-      border-color: var(--accent);
-      background: rgba(99,102,241,0.08);
-    }
 
     @media (max-width: 768px) {
       .results-actions { grid-template-columns: 1fr; }
@@ -1304,14 +1199,7 @@
 
             <div id="availabilitySummary" class="availability-summary"></div>
 
-            <div class="filter-bar">
-              <button class="filter-pill active" onclick="filterResults('all', this)">All</button>
-              <button class="filter-pill" onclick="filterResults('brandable', this)">Brandable</button>
-              <button class="filter-pill" onclick="filterResults('keyword', this)">Keyword</button>
-              <button class="filter-pill" onclick="filterResults('hybrid', this)">Hybrid</button>
-            </div>
-
-            <div id="domainsGrid" class="domains-grid"></div>
+<div id="domainsGrid" class="domains-grid"></div>
 
             <div id="searchingIndicator" class="searching-indicator">
               <div class="thinking-dots"><span></span><span></span><span></span></div>
@@ -1865,12 +1753,9 @@
     }
 
     function renderScorePill(s, avail) {
-      const { score, breakdown } = computeDomainScore(s, avail);
+      const { score } = computeDomainScore(s, avail);
       const cls = score >= 80 ? 'score-green' : score >= 60 ? 'score-amber' : 'score-red';
-      const rows = breakdown.map(r =>
-        `<div class="score-tooltip-row"><span>${r.label}</span><span>${r.pts}/${r.max}</span></div>`
-      ).join('');
-      return `<span class="score-pill ${cls}" title="Domain Score — hover to see breakdown"><span style="font-size:9px;opacity:0.65;margin-right:2px">SCORE</span>${score}<span style="font-size:9px;opacity:0.5">/100</span><div class="score-tooltip"><div class="score-tooltip-title">Domain Score: ${score}/100</div>${rows}</div></span>`;
+      return `<div class="score-display ${cls}"><span class="score-number">${score}</span><span class="score-denom">/100</span></div>`;
     }
 
     // ── API helpers ────────────────────────────────────────────────────────────
@@ -2070,17 +1955,10 @@
         <div class="domain-card-header">
           <div class="domain-name">
             <span>${escapeHtml(s.name)}<span class="tld">${escapeHtml(s.tld)}</span></span>
-            <button class="copy-btn" onclick="copyDomain('${escapeHtml(fullDomain)}', this)" title="Copy to clipboard">⎘</button>
           </div>
           ${renderScorePill(s, availability)}
         </div>
-        <div class="domain-badges">
-          <span class="badge style-badge ${s.style}">${capitalise(s.style)}</span>
-        </div>
         <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
-        <div class="domain-meta">
-          <a href="${namechkUrl}" target="_blank" rel="noopener" class="social-link">@ Social handles</a>
-        </div>
         ${avail === true
           ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">${registerLabel}</a>`
           : avail === false
@@ -2113,7 +1991,6 @@
           <div class="skeleton-line skeleton-domain"></div>
           <div class="skeleton-line skeleton-score"></div>
         </div>
-        <div><div class="skeleton-line skeleton-badge"></div></div>
         <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
           <div class="skeleton-line skeleton-text w-full"></div>
           <div class="skeleton-line skeleton-text w-4-5"></div>
