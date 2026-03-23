@@ -1064,6 +1064,41 @@
     .score-pill.score-amber { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
     .score-pill.score-red   { background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
 
+    .score-tooltip {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      background: #1a2235;
+      border: 1px solid var(--border-bright);
+      border-radius: 10px;
+      padding: 12px;
+      width: 210px;
+      z-index: 20;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      text-align: left;
+    }
+    .score-pill { cursor: help; }
+    .score-pill:hover .score-tooltip { display: block; }
+    .score-tooltip-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .score-tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      color: var(--text-muted);
+    }
+    .score-tooltip-row span:last-child { color: var(--text-secondary); }
+
     /* ── Domain meta row ─────── */
     .domain-meta {
       display: flex;
@@ -1747,7 +1782,10 @@
     function renderScorePill(s, avail) {
       const { score, breakdown } = computeDomainScore(s, avail);
       const cls = score >= 80 ? 'score-green' : score >= 60 ? 'score-amber' : 'score-red';
-      return `<span class="score-pill ${cls}"><span style="font-size:9px;opacity:0.65;margin-right:2px">SCORE</span>${score}<span style="font-size:9px;opacity:0.5">/100</span></span>`;
+      const rows = breakdown.map(r =>
+        `<div class="score-tooltip-row"><span>${r.label}</span><span>${r.pts}/${r.max}</span></div>`
+      ).join('');
+      return `<span class="score-pill ${cls}"><span style="font-size:9px;opacity:0.65;margin-right:2px">SCORE</span>${score}<span style="font-size:9px;opacity:0.5">/100</span><div class="score-tooltip"><div class="score-tooltip-title">Domain Score: ${score}/100</div>${rows}</div></span>`;
     }
 
     // ── API helpers ────────────────────────────────────────────────────────────
@@ -1948,8 +1986,8 @@
           <div class="domain-name">
             <span>${escapeHtml(s.name)}<span class="tld">${escapeHtml(s.tld)}</span></span>
           </div>
-          ${renderScorePill(s, availability)}
         </div>
+        ${renderScorePill(s, availability)}
         <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
         ${avail === true
           ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">${registerLabel}</a>`
