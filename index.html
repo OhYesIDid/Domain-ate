@@ -702,13 +702,23 @@
       gap: 4px;
       min-width: 0;
       flex: 1;
+      overflow: hidden;
     }
-    /* Name + TLD are an unbreakable unit — never ellipse the TLD */
+    /* Name + TLD are an unbreakable unit — never clip mid-TLD */
     .domain-name > span:first-child {
+      display: inline-flex;
+      align-items: baseline;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .domain-name > span:first-child > .name-part {
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: nowrap;
       min-width: 0;
     }
     .domain-name .tld {
+      flex-shrink: 0;
       color: var(--accent-light);
     }
 
@@ -1201,6 +1211,15 @@
       .trust-signals { gap: 20px; }
       .options { gap: 6px; }
       .domains-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Last card alone in a 2-col row — centre it at natural card width */
+    @media (min-width: 769px) {
+      .domains-grid .domain-card:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+        max-width: calc(50% - 8px);
+        margin: 0 auto;
+      }
     }
   </style>
 </head>
@@ -2069,7 +2088,7 @@
       return `
         <div class="domain-card-header">
           <div class="domain-name">
-            <span>${escapeHtml(s.name)}<span class="tld">${escapeHtml(s.tld)}</span></span>
+            <span><span class="name-part">${escapeHtml(s.name)}</span><span class="tld">${escapeHtml(s.tld)}</span></span>
             <button class="copy-btn" onclick="copyDomain('${escapeHtml(fullDomain)}', this)" title="Copy to clipboard">⎘</button>
           </div>
           ${renderScorePill(s, availability)}
