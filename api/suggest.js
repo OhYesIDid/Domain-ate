@@ -355,6 +355,10 @@ export default async function handler(req, res) {
 
   const send = data => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
+  // ── Build prompt ──────────────────────────────────────────────────────────────
+  const geo      = answers?.geo      || 'global';
+  const audience = answers?.audience || 'both';
+
   // ── TLD stats for dynamic prompt (scoped to this audience+geo context) ───────
   const ctx         = `${audience}:${geo}`;
   const tldStats    = await getTldStats(ctx);
@@ -363,10 +367,6 @@ export default async function handler(req, res) {
       Object.entries(tldStats).map(([t, r]) => `${t}: ${r}% available`).join(' | ') +
       '\nWeight your TLD choices toward higher availability rates.\n'
     : '';
-
-  // ── Build prompt ──────────────────────────────────────────────────────────────
-  const geo      = answers?.geo      || 'global';
-  const audience = answers?.audience || 'both';
 
   const tldRules = {
     global:
