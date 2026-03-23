@@ -204,10 +204,11 @@ async function rdapCheck(domain) {
 // Returns null on pass, or a string describing why it failed.
 // seenNames = names that already passed this gate (for diversity enforcement).
 
-const PADDING_SUFFIXES = ['app', 'hq', 'get', 'now', 'go', 'try', 'my', 'use', 'hub', 'pro', 'base', 'spot', 'nest', 'labs', 'place', 'space', 'zone', 'desk', 'bay', 'core', 'link', 'works', 'flow'];
+// Only block truly generic functional suffixes — not valid name parts like flow/core/link
+const PADDING_SUFFIXES = ['app', 'hq', 'get', 'now', 'go', 'try', 'my', 'use', 'hub', 'pro', 'base', 'labs'];
 const PADDING_PREFIXES = ['get', 'my', 'the', 'use', 'try'];
 
-// Top tech brands — reject names within edit-distance 2 to avoid trademark conflicts
+// Reject names within edit-distance 1 (single-char typos) of known brands only
 const KNOWN_BRANDS = ['stripe', 'slack', 'spotify', 'notion', 'figma', 'canva', 'shopify', 'hubspot', 'dropbox', 'airbnb', 'twitter', 'tiktok', 'google', 'amazon', 'paypal', 'square', 'twilio', 'zendesk', 'atlassian', 'github', 'gitlab', 'jira', 'trello', 'asana', 'monday', 'clickup', 'discord', 'telegram', 'whatsapp', 'reddit', 'medium', 'substack', 'webflow', 'framer', 'airtable', 'linear', 'todoist', 'intercom', 'salesforce', 'netflix', 'adobe', 'microsoft', 'facebook', 'instagram', 'linkedin', 'pinterest', 'snapchat', 'basecamp', 'mailchimp', 'sendgrid', 'klaviyo', 'mixpanel', 'amplitude', 'hotjar', 'datadog', 'cloudflare', 'vercel', 'netlify', 'heroku', 'supabase', 'firebase'];
 
 // Strip common branding affixes to extract the semantic root for concept-dedup
@@ -251,7 +252,7 @@ function qualityGate(domain, seenNames, submittedNames = []) {
   const prefixOffender = PADDING_PREFIXES.find(p => name !== p && name.startsWith(p) && name.length > p.length + 3);
   if (prefixOffender) return `padding prefix detected — starts with "${prefixOffender}"`;
   for (const brand of KNOWN_BRANDS) {
-    if (editDist(name, brand) <= 2) return `too similar to known brand "${brand}" — avoid trademark conflicts`;
+    if (editDist(name, brand) <= 1) return `too similar to known brand "${brand}" — avoid trademark conflicts`;
   }
   for (const seen of seenNames) {
     if (editDist(name, seen) <= 2) return `too similar to already-tried "${seen}" — invent a different concept`;
@@ -260,7 +261,7 @@ function qualityGate(domain, seenNames, submittedNames = []) {
   const newRoot = extractRoot(name);
   for (const sub of submittedNames) {
     const subRoot = extractRoot(sub);
-    if (newRoot.length >= 4 && subRoot.length >= 4 && (newRoot.includes(subRoot) || subRoot.includes(newRoot))) {
+    if (newRoot.length >= 5 && subRoot.length >= 5 && (newRoot.includes(subRoot) || subRoot.includes(newRoot))) {
       return `shares concept root with already-submitted "${sub}" — explore a genuinely different direction`;
     }
   }
