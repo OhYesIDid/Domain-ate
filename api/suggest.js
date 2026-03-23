@@ -514,15 +514,16 @@ export default async function handler(req, res) {
 
           // ── check_domain ────────────────────────────────────────────────────
           if (block.name === 'check_domain') {
-            checksUsed++;
             const domain = String(block.input.domain || '').toLowerCase().trim();
             const tld    = domain.includes('.') ? domain.slice(domain.lastIndexOf('.')) : '';
 
-            // 1. Quality gate (no network)
+            // 1. Quality gate (no network) — free, doesn't count against budget
             const gateErr = qualityGate(domain, seenNames, submittedNames);
             if (gateErr) {
               result = { available: false, reason: `quality: ${gateErr}` };
             } else {
+              // Passed quality gate — now costs a budget check (network call follows)
+              checksUsed++;
               // Mark name as seen so near-duplicates fail diversity check
               seenNames.push(domain.slice(0, domain.lastIndexOf('.')));
 
@@ -574,15 +575,9 @@ export default async function handler(req, res) {
           });
         }
 
-        // Adaptive budget: if 40% of checks used with < 30% of submissions, pivot to high-availability TLDs
+        // Track whether budget is running low (used in end_turn nudge only — never mix text+tool_result blocks)
         if (!budgetWarned && checksUsed >= Math.floor(MAX_CHECKS * 0.4) && submitted < Math.floor(TARGET * 0.3)) {
           budgetWarned = true;
-          toolResults.push({
-            type: 'text',
-            text: `BUDGET ALERT: ${checksUsed}/${MAX_CHECKS} checks used, only ${submitted}/${TARGET} domains found. ` +
-              `.com availability is very low for these concepts. Immediately switch to .io, .app, .ai, .co for ` +
-              `the remaining ${TARGET - submitted} domains — these TLDs have far higher availability right now.`,
-          });
         }
 
         messages.push({ role: 'user', content: toolResults });
