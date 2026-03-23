@@ -1771,10 +1771,17 @@
       score += pronPts;
       breakdown.push({ label: 'Pronounceable', pts: pronPts, max: 12 });
 
-      // Keyword clarity (8pts)
-      const stylePts = s.style === 'keyword' ? 8 : s.style === 'hybrid' ? 4 : 2;
-      score += stylePts;
-      breakdown.push({ label: 'Keyword clarity', pts: stylePts, max: 8 });
+      // Syllable count (4pts) — 2–3 syllables is the sweet spot for recall
+      const syllables = (s.name.match(/[aeiou]+/gi) || []).length;
+      const sylPts = (syllables >= 2 && syllables <= 3) ? 4 : syllables === 1 ? 2 : 1;
+      score += sylPts;
+      breakdown.push({ label: 'Syllable count', pts: sylPts, max: 4 });
+
+      // AI confidence (4pts) — Claude's own fit assessment for this business
+      const conf    = s.confidence ? Math.min(10, Math.max(1, s.confidence)) : 7;
+      const confPts = Math.round((conf / 10) * 4);
+      score += confPts;
+      breakdown.push({ label: 'AI confidence', pts: confPts, max: 4 });
 
       return { score, breakdown };
     }

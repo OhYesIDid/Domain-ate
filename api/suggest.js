@@ -134,23 +134,37 @@ async function setCache(domain, available, premiumPrice = null) {
 // Running counters per TLD. After enough data accumulates, the prompt
 // references real availability rates so Claude aims where headroom exists.
 
-async function recordTld(tld, available) {
-  const k = tld.replace(/\./g, '_');
+async function recordTld(tld, available, ctx = 'global') {
+  const k  = tld.replace(/\./g, '_');
+  const ck = `${ctx}:${k}`;
   redisIncr(`tld:${k}:checked`).catch(() => {});
-  if (available === true) redisIncr(`tld:${k}:avail`).catch(() => {});
+  redisIncr(`tld:${ck}:checked`).catch(() => {});
+  if (available === true) {
+    redisIncr(`tld:${k}:avail`).catch(() => {});
+    redisIncr(`tld:${ck}:avail`).catch(() => {});
+  }
 }
 
-async function getTldStats() {
+async function getTldStats(ctx = 'global') {
   const tlds = ['.com', '.io', '.app', '.co', '.ai', '.dev'];
   const stats = {};
   try {
     const rows = await Promise.all(tlds.map(async tld => {
-      const k = tld.replace(/\./g, '_');
-      const [c, a] = await Promise.all([redisGet(`tld:${k}:checked`), redisGet(`tld:${k}:avail`)]);
-      return { tld, checked: parseInt(c || '0'), avail: parseInt(a || '0') };
+      const k  = tld.replace(/\./g, '_');
+      const ck = `${ctx}:${k}`;
+      const [cc, ca, gc, ga] = await Promise.all([
+        redisGet(`tld:${ck}:checked`), redisGet(`tld:${ck}:avail`),
+        redisGet(`tld:${k}:checked`),  redisGet(`tld:${k}:avail`),
+      ]);
+      return {
+        tld,
+        ctxChecked: parseInt(cc || '0'), ctxAvail: parseInt(ca || '0'),
+        glbChecked: parseInt(gc || '0'), glbAvail: parseInt(ga || '0'),
+      };
     }));
-    for (const { tld, checked, avail } of rows) {
-      if (checked >= 50) stats[tld] = Math.round((avail / checked) * 100);
+    for (const { tld, ctxChecked, ctxAvail, glbChecked, glbAvail } of rows) {
+      if (ctxChecked >= 30)      stats[tld] = Math.round((ctxAvail / ctxChecked) * 100);
+      else if (glbChecked >= 50) stats[tld] = Math.round((glbAvail / glbChecked) * 100);
     }
   } catch {}
   return stats;
@@ -190,7 +204,25 @@ async function rdapCheck(domain) {
 // Returns null on pass, or a string describing why it failed.
 // seenNames = names that already passed this gate (for diversity enforcement).
 
-const PADDING_SUFFIXES = ['app', 'hq', 'get', 'now', 'go', 'try', 'my', 'use', 'hub', 'pro'];
+const PADDING_SUFFIXES = ['app', 'hq', 'get', 'now', 'go', 'try', 'my', 'use', 'hub', 'pro', 'base', 'spot', 'nest', 'labs', 'place', 'space', 'zone', 'desk', 'bay', 'core', 'link', 'works', 'flow'];
+const PADDING_PREFIXES = ['get', 'my', 'the', 'use', 'try'];
+
+// Top tech brands — reject names within edit-distance 2 to avoid trademark conflicts
+const KNOWN_BRANDS = ['stripe', 'slack', 'spotify', 'notion', 'figma', 'canva', 'shopify', 'hubspot', 'dropbox', 'airbnb', 'twitter', 'tiktok', 'google', 'amazon', 'paypal', 'square', 'twilio', 'zendesk', 'atlassian', 'github', 'gitlab', 'jira', 'trello', 'asana', 'monday', 'clickup', 'discord', 'telegram', 'whatsapp', 'reddit', 'medium', 'substack', 'webflow', 'framer', 'airtable', 'linear', 'todoist', 'intercom', 'salesforce', 'netflix', 'adobe', 'microsoft', 'facebook', 'instagram', 'linkedin', 'pinterest', 'snapchat', 'basecamp', 'mailchimp', 'sendgrid', 'klaviyo', 'mixpanel', 'amplitude', 'hotjar', 'datadog', 'cloudflare', 'vercel', 'netlify', 'heroku', 'supabase', 'firebase'];
+
+// Strip common branding affixes to extract the semantic root for concept-dedup
+function extractRoot(name) {
+  const suffixes = ['ify', 'ize', 'ous', 'ful', 'ble', 'era', 'ova', 'io', 'ai', 'ly'];
+  const prefixes = ['get', 'my', 'the', 'use', 'try'];
+  let root = name;
+  for (const p of prefixes) {
+    if (root.startsWith(p) && root.length > p.length + 3) { root = root.slice(p.length); break; }
+  }
+  for (const s of suffixes) {
+    if (root.endsWith(s) && root.length > s.length + 2) { root = root.slice(0, -s.length); break; }
+  }
+  return root;
+}
 
 function editDist(a, b) {
   const m = a.length, n = b.length;
@@ -204,7 +236,7 @@ function editDist(a, b) {
   return dp[m][n];
 }
 
-function qualityGate(domain, seenNames) {
+function qualityGate(domain, seenNames, submittedNames = []) {
   const dot = domain.lastIndexOf('.');
   if (dot === -1) return 'missing TLD';
   const name = domain.slice(0, dot).toLowerCase();
@@ -214,10 +246,23 @@ function qualityGate(domain, seenNames) {
   const vowelRatio = (name.match(/[aeiou]/gi) || []).length / name.length;
   if (vowelRatio < 0.2 || vowelRatio > 0.6) return 'poor vowel ratio — likely unpronounceable';
   if (/[^aeiou]{4,}/i.test(name))           return 'consonant cluster — unpronounceable';
-  const offender = PADDING_SUFFIXES.find(p => name !== p && name.endsWith(p) && name.length > p.length + 2);
-  if (offender) return `padding suffix detected — ends in "${offender}"`;
+  const suffixOffender = PADDING_SUFFIXES.find(p => name !== p && name.endsWith(p) && name.length > p.length + 2);
+  if (suffixOffender) return `padding suffix detected — ends in "${suffixOffender}"`;
+  const prefixOffender = PADDING_PREFIXES.find(p => name !== p && name.startsWith(p) && name.length > p.length + 3);
+  if (prefixOffender) return `padding prefix detected — starts with "${prefixOffender}"`;
+  for (const brand of KNOWN_BRANDS) {
+    if (editDist(name, brand) <= 2) return `too similar to known brand "${brand}" — avoid trademark conflicts`;
+  }
   for (const seen of seenNames) {
     if (editDist(name, seen) <= 2) return `too similar to already-tried "${seen}" — invent a different concept`;
+  }
+  // Semantic concept dedup — reject if new name shares root with already-submitted domain
+  const newRoot = extractRoot(name);
+  for (const sub of submittedNames) {
+    const subRoot = extractRoot(sub);
+    if (newRoot.length >= 4 && subRoot.length >= 4 && (newRoot.includes(subRoot) || subRoot.includes(newRoot))) {
+      return `shares concept root with already-submitted "${sub}" — explore a genuinely different direction`;
+    }
   }
   return null; // pass
 }
@@ -248,12 +293,13 @@ const TOOLS = [
     input_schema: {
       type: 'object',
       properties: {
-        name:      { type: 'string', description: 'Domain name without TLD, lowercase' },
-        tld:       { type: 'string', description: 'TLD including dot, e.g. ".io"' },
-        style:     { type: 'string', enum: ['brandable', 'keyword', 'hybrid'] },
-        rationale: { type: 'string', description: 'Why this name suits this specific business (max 15 words)' },
+        name:       { type: 'string',  description: 'Domain name without TLD, lowercase' },
+        tld:        { type: 'string',  description: 'TLD including dot, e.g. ".io"' },
+        style:      { type: 'string',  enum: ['brandable', 'keyword', 'hybrid'] },
+        rationale:  { type: 'string',  description: 'Why this name suits this specific business (max 15 words)' },
+        confidence: { type: 'integer', minimum: 1, maximum: 10, description: 'How well this name fits the business (1=poor fit, 10=perfect)' },
       },
-      required: ['name', 'tld', 'style', 'rationale'],
+      required: ['name', 'tld', 'style', 'rationale', 'confidence'],
     },
   },
 ];
@@ -309,8 +355,9 @@ export default async function handler(req, res) {
 
   const send = data => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
-  // ── TLD stats for dynamic prompt ──────────────────────────────────────────────
-  const tldStats    = await getTldStats();
+  // ── TLD stats for dynamic prompt (scoped to this audience+geo context) ───────
+  const ctx         = `${audience}:${geo}`;
+  const tldStats    = await getTldStats(ctx);
   const tldStatsStr = Object.keys(tldStats).length >= 3
     ? '\nLIVE AVAILABILITY DATA from recent searches:\n' +
       Object.entries(tldStats).map(([t, r]) => `${t}: ${r}% available`).join(' | ') +
@@ -359,15 +406,25 @@ export default async function handler(req, res) {
     'choices affect conversion and recall.\n\n' +
     'You have two tools:\n' +
     '• check_domain — verifies quality standards and real-time availability\n' +
-    '• submit_domain — records a confirmed-available domain as a final suggestion\n\n' +
+    '• submit_domain — records a confirmed-available domain (include an honest confidence score 1–10 for how well it fits this specific business)\n\n' +
     `Your goal: submit exactly ${TARGET} confirmed-available domains.\n` +
     `Budget: at most ${MAX_CHECKS} check_domain calls — use them wisely.\n\n` +
-    'CRITICAL RULE: When a domain is TAKEN, abandon that entire concept and invent something genuinely new. ' +
-    'Never pad, never append, never retry with a single letter changed. ' +
-    'The quality gate automatically rejects near-duplicates.';
+    'CRITICAL RULES:\n' +
+    '• When a domain is TAKEN: abandon that entire concept and invent something genuinely new\n' +
+    '• Never pad, never append, never retry with a single letter changed\n' +
+    '• Never submit a name that is similar to an existing brand (Stripe, Slack, Shopify, etc.)\n' +
+    '• Each submission must come from a distinct creative direction — no shared concept roots\n' +
+    '• The quality gate automatically rejects near-duplicates, padding prefixes/suffixes, and brand clashes';
 
   const geoLabel      = { global: 'Global (worldwide)', us: 'United States', europe: 'Europe', asia: 'Asia-Pacific' }[geo] || 'Global';
   const audienceLabel = { b2b: 'Businesses (B2B)', b2c: 'Consumers (B2C)', genz: 'Gen Z / young consumers', both: 'Mixed (B2B + B2C)' }[audience] || 'Mixed';
+
+  const styleMix = {
+    b2b:  `- 2 brandable (coined/abstract names that feel premium and trustworthy)\n- 4 keyword (descriptive names that signal what the business does — clarity builds B2B trust)\n- 4 hybrid (brand+keyword blends like Dropbox, Mailchimp, Basecamp)`,
+    b2c:  `- 5 brandable (invented/abstract — like Spotify, Canva, Notion)\n- 2 keyword (descriptive/literal)\n- 3 hybrid (brand + keyword blend like Pinterest, Snapchat)`,
+    genz: `- 7 brandable (bold, internet-native coined names — unexpected, energetic, memorable)\n- 1 keyword (only if genuinely creative, not generic)\n- 2 hybrid`,
+    both: `- 4 brandable (invented/abstract — like Spotify, Slack, Notion)\n- 3 keyword (descriptive/literal — like Basecamp, Mailchimp)\n- 3 hybrid (brand + keyword blend — like Pinterest, Dropbox)`,
+  }[audience] || `- 4 brandable\n- 3 keyword\n- 3 hybrid`;
 
   const userMessage =
     `Find exactly ${TARGET} available domain names for this business.\n\n` +
@@ -379,13 +436,12 @@ export default async function handler(req, res) {
     `TLD RULES FOR THIS MARKET\n${tldRules}\n` +
     tldStatsStr + '\n' +
     `STYLE MIX (across your ${TARGET} submissions)\n` +
-    `- 4 brandable (invented/abstract — like Spotify, Slack, Notion)\n` +
-    `- 3 keyword (descriptive/literal — like Basecamp, Mailchimp)\n` +
-    `- 3 hybrid (brand + keyword blend — like Pinterest, Dropbox)\n\n` +
+    styleMix + '\n\n' +
     `NAMING REQUIREMENTS\n` +
     `- 5–12 characters (name only, excluding TLD)\n` +
     `- Memorable and easy to spell after hearing it once\n` +
     `- No hyphens, no numbers\n` +
+    `- Do NOT submit names similar to existing brands (Stripe, Slack, Shopify, Notion, etc.)\n` +
     `- Each submission must come from a genuinely different creative concept\n\n` +
     `AVAILABILITY STRATEGY\n` +
     `Most obvious .com combinations are already registered. To find available names:\n` +
@@ -394,17 +450,19 @@ export default async function handler(req, res) {
     `- Freely use .io, .app, .co, .ai — these have far more availability than .com\n` +
     `- The more specific and creative the name, the more likely it is free\n\n` +
     `WORKFLOW\n` +
-    `1. Think of a strong name concept suited to this business\n` +
+    `1. Think of a strong, original name concept suited to this specific business\n` +
     `2. Call check_domain — inspect the result carefully\n` +
-    `3. If available → immediately call submit_domain\n` +
+    `3. If available → immediately call submit_domain with an honest confidence score (1–10)\n` +
     `4. If taken or rejected → invent a completely different concept, do not retry variations\n` +
     `5. Repeat until you have submitted ${TARGET} domains`;
 
   // ── Agentic tool-use loop ─────────────────────────────────────────────────────
-  const messages  = [{ role: 'user', content: userMessage }];
-  let checksUsed  = 0;
-  let submitted   = 0;
-  const seenNames = []; // names that passed quality gate — used for diversity enforcement
+  const messages        = [{ role: 'user', content: userMessage }];
+  let checksUsed        = 0;
+  let submitted         = 0;
+  let budgetWarned      = false;
+  const seenNames       = []; // names that passed quality gate — edit-distance diversity
+  const submittedNames  = []; // names actually submitted — semantic concept dedup
 
   try {
     let turns = 0;
@@ -433,10 +491,13 @@ export default async function handler(req, res) {
 
       if (data.stop_reason === 'end_turn') {
         if (submitted >= TARGET) break;
-        // Claude stopped early — nudge it to continue
+        // Claude stopped early — nudge it to continue, add budget note if burning checks fast
+        const budgetNote = (checksUsed >= Math.floor(MAX_CHECKS * 0.5) && submitted < Math.floor(TARGET * 0.5))
+          ? ` You are using checks faster than submissions. Switch to .io, .app, .ai, .co — .com is heavily registered for these concepts.`
+          : '';
         messages.push({
           role: 'user',
-          content: `You've submitted ${submitted} of ${TARGET} required domains. Please continue and find ${TARGET - submitted} more available domains.`,
+          content: `You've submitted ${submitted} of ${TARGET} required domains. Please continue and find ${TARGET - submitted} more available domains.${budgetNote}`,
         });
         send({ type: 'searching', submitted, remaining: TARGET - submitted });
         continue;
@@ -457,7 +518,7 @@ export default async function handler(req, res) {
             const tld    = domain.includes('.') ? domain.slice(domain.lastIndexOf('.')) : '';
 
             // 1. Quality gate (no network)
-            const gateErr = qualityGate(domain, seenNames);
+            const gateErr = qualityGate(domain, seenNames, submittedNames);
             if (gateErr) {
               result = { available: false, reason: `quality: ${gateErr}` };
             } else {
@@ -467,7 +528,7 @@ export default async function handler(req, res) {
               // 2. Cache lookup (cross-user, accumulated over time)
               const cached = await getCached(domain);
               if (cached !== null) {
-                recordTld(tld, cached.available);
+                recordTld(tld, cached.available, ctx);
                 result = cached.available
                   ? { available: true,  reason: cached.premium ? `available (premium ~$${cached.price}/yr)` : 'available (cached)' }
                   : { available: false, reason: 'taken (cached) — invent a completely new concept' };
@@ -475,7 +536,7 @@ export default async function handler(req, res) {
                 // 3. Live RDAP check
                 const available = await rdapCheck(domain);
                 setCache(domain, available).catch(() => {});
-                recordTld(tld, available);
+                recordTld(tld, available, ctx);
                 result = available === true
                   ? { available: true,  reason: 'available — call submit_domain now' }
                   : available === false
@@ -488,12 +549,14 @@ export default async function handler(req, res) {
           } else if (block.name === 'submit_domain') {
             if (submitted < TARGET) {
               const domain = {
-                name:      String(block.input.name      || '').toLowerCase().trim(),
-                tld:       String(block.input.tld       || '').trim(),
-                style:     ['brandable', 'keyword', 'hybrid'].includes(block.input.style)
-                             ? block.input.style : 'brandable',
-                rationale: String(block.input.rationale || '').trim().slice(0, 120),
+                name:       String(block.input.name      || '').toLowerCase().trim(),
+                tld:        String(block.input.tld       || '').trim(),
+                style:      ['brandable', 'keyword', 'hybrid'].includes(block.input.style)
+                              ? block.input.style : 'brandable',
+                rationale:  String(block.input.rationale || '').trim().slice(0, 120),
+                confidence: Math.min(10, Math.max(1, parseInt(block.input.confidence) || 7)),
               };
+              submittedNames.push(domain.name);
               submitted++;
               send({ type: 'domain', domain });
             }
@@ -507,6 +570,17 @@ export default async function handler(req, res) {
             type:        'tool_result',
             tool_use_id: block.id,
             content:     JSON.stringify(result),
+          });
+        }
+
+        // Adaptive budget: if 40% of checks used with < 30% of submissions, pivot to high-availability TLDs
+        if (!budgetWarned && checksUsed >= Math.floor(MAX_CHECKS * 0.4) && submitted < Math.floor(TARGET * 0.3)) {
+          budgetWarned = true;
+          toolResults.push({
+            type: 'text',
+            text: `BUDGET ALERT: ${checksUsed}/${MAX_CHECKS} checks used, only ${submitted}/${TARGET} domains found. ` +
+              `.com availability is very low for these concepts. Immediately switch to .io, .app, .ai, .co for ` +
+              `the remaining ${TARGET - submitted} domains — these TLDs have far higher availability right now.`,
           });
         }
 
