@@ -199,6 +199,58 @@ async function rdapCheck(domain) {
   } catch { return null; }
 }
 
+// ── Namecheap batch availability check ───────────────────────────────────────
+// Checks up to 50 domains in a single API call.
+// Returns a map of domain → { available: bool|null, premium: bool, price: number|null }
+// Falls back to parallel RDAP if Namecheap credentials are absent or the call fails.
+
+async function batchCheck(domains) {
+  const ncApiKey  = process.env.NAMECHEAP_API_KEY;
+  const ncApiUser = process.env.NAMECHEAP_API_USER;
+  const ncClientIp = process.env.NAMECHEAP_CLIENT_IP || '127.0.0.1';
+
+  if (ncApiKey && ncApiUser) {
+    try {
+      const url =
+        `https://api.namecheap.com/xml.response` +
+        `?ApiUser=${encodeURIComponent(ncApiUser)}` +
+        `&ApiKey=${encodeURIComponent(ncApiKey)}` +
+        `&UserName=${encodeURIComponent(ncApiUser)}` +
+        `&Command=namecheap.domains.check` +
+        `&ClientIp=${encodeURIComponent(ncClientIp)}` +
+        `&DomainList=${encodeURIComponent(domains.join(','))}`;
+
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      const xml = await res.text();
+
+      if (xml.includes('Status="ERROR"') || xml.includes('ErrCount>0<')) {
+        throw new Error('Namecheap API error');
+      }
+
+      const results = {};
+      const regex   = /DomainCheckResult([^>]+)/gi;
+      let match;
+      while ((match = regex.exec(xml)) !== null) {
+        const attrs     = match[1];
+        const domain    = (attrs.match(/Domain="([^"]+)"/i)               || [])[1]?.toLowerCase();
+        const available = (attrs.match(/Available="([^"]+)"/i)            || [])[1]?.toLowerCase() === 'true';
+        const isPremium = (attrs.match(/IsPremiumName="([^"]+)"/i)        || [])[1]?.toLowerCase() === 'true';
+        const price     = parseFloat((attrs.match(/PremiumRegistrationPrice="([^"]+)"/i) || [])[1] || '');
+        if (domain) results[domain] = { available, premium: isPremium, price: isNaN(price) ? null : price };
+      }
+
+      if (Object.keys(results).length > 0) return results;
+      throw new Error('No results parsed');
+    } catch (err) {
+      console.warn('Namecheap batch check failed, falling back to RDAP:', err.message);
+    }
+  }
+
+  // RDAP fallback — parallel
+  const settled = await Promise.all(domains.map(async d => ({ d, available: await rdapCheck(d) })));
+  return Object.fromEntries(settled.map(({ d, available }) => [d, { available, premium: false, price: null }]));
+}
+
 // ── Quality gate ──────────────────────────────────────────────────────────────
 // Called before RDAP — no network required.
 // Returns null on pass, or a string describing why it failed.
@@ -531,9 +583,11 @@ export default async function handler(req, res) {
           return { block, domain, tld, needsRdap: true };
         });
 
-        // ── Phase 2: parallel RDAP for all domains that passed quality gate ──
-        await Promise.all(pending.map(async p => {
-          if (!p.needsRdap) return;
+        // ── Phase 2: batch availability check for domains that passed quality gate ──
+        // First resolve from cache; anything not cached goes to Namecheap batch (or RDAP fallback).
+        const uncached = [];
+        for (const p of pending) {
+          if (!p.needsRdap) continue;
           const cached = await getCached(p.domain);
           if (cached !== null) {
             recordTld(p.tld, cached.available, ctx);
@@ -541,16 +595,23 @@ export default async function handler(req, res) {
               ? { available: true,  reason: cached.premium ? `available (premium ~$${cached.price}/yr)` : 'available (cached)' }
               : { available: false, reason: 'taken (cached) — invent a completely new concept' };
           } else {
-            const available = await rdapCheck(p.domain);
-            setCache(p.domain, available).catch(() => {});
-            recordTld(p.tld, available, ctx);
-            p.result = available === true
-              ? { available: true,  reason: 'available — call submit_domain now' }
-              : available === false
+            uncached.push(p);
+          }
+        }
+
+        if (uncached.length > 0) {
+          const batchResults = await batchCheck(uncached.map(p => p.domain));
+          for (const p of uncached) {
+            const r = batchResults[p.domain] ?? { available: null, premium: false, price: null };
+            setCache(p.domain, r.available, r.premium ? r.price : null).catch(() => {});
+            recordTld(p.tld, r.available, ctx);
+            p.result = r.available === true
+              ? { available: true,  reason: r.premium ? `available (premium ~$${r.price}/yr)` : 'available — call submit_domain now' }
+              : r.available === false
               ? { available: false, reason: 'taken — invent a completely new concept, do not retry variations' }
               : { available: false, reason: 'inconclusive — treat as unavailable and try a different concept' };
           }
-        }));
+        }
 
         // ── Phase 3: handle submit_domain + build tool results ───────────────
         const toolResults = [];
