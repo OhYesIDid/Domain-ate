@@ -204,10 +204,9 @@ async function rdapCheck(domain) {
 // Returns a map of domain → { available: bool|null, premium: bool, price: number|null }
 // Falls back to parallel RDAP if Namecheap credentials are absent or the call fails.
 
-async function batchCheck(domains) {
+async function batchCheck(domains, clientIp = '127.0.0.1') {
   const ncApiKey  = process.env.NAMECHEAP_API_KEY;
   const ncApiUser = process.env.NAMECHEAP_API_USER;
-  const ncClientIp = process.env.NAMECHEAP_CLIENT_IP || '127.0.0.1';
 
   if (ncApiKey && ncApiUser) {
     try {
@@ -217,7 +216,7 @@ async function batchCheck(domains) {
         `&ApiKey=${encodeURIComponent(ncApiKey)}` +
         `&UserName=${encodeURIComponent(ncApiUser)}` +
         `&Command=namecheap.domains.check` +
-        `&ClientIp=${encodeURIComponent(ncClientIp)}` +
+        `&ClientIp=${encodeURIComponent(clientIp)}` +
         `&DomainList=${encodeURIComponent(domains.join(','))}`;
 
       const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
@@ -370,6 +369,11 @@ export default async function handler(req, res) {
 
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Client IP — passed to Namecheap batch API (must match a whitelisted IP in Namecheap account)
+  const clientIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+    || req.socket?.remoteAddress
+    || '127.0.0.1';
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
   const authHeader = req.headers.authorization || '';
@@ -600,7 +604,7 @@ export default async function handler(req, res) {
         }
 
         if (uncached.length > 0) {
-          const batchResults = await batchCheck(uncached.map(p => p.domain));
+          const batchResults = await batchCheck(uncached.map(p => p.domain), clientIp);
           for (const p of uncached) {
             const r = batchResults[p.domain] ?? { available: null, premium: false, price: null };
             setCache(p.domain, r.available, r.premium ? r.price : null).catch(() => {});
