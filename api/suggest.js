@@ -598,6 +598,7 @@ export default async function handler(req, res) {
             p.result = cached.available
               ? { available: true,  reason: cached.premium ? `available (premium ~$${cached.price}/yr)` : 'available (cached)' }
               : { available: false, reason: 'taken (cached) — invent a completely new concept' };
+            send({ type: 'check', domain: p.domain, available: cached.available === true });
           } else {
             uncached.push(p);
           }
@@ -614,6 +615,7 @@ export default async function handler(req, res) {
               : r.available === false
               ? { available: false, reason: 'taken — invent a completely new concept, do not retry variations' }
               : { available: false, reason: 'inconclusive — treat as unavailable and try a different concept' };
+            send({ type: 'check', domain: p.domain, available: r.available === true });
           }
         }
 

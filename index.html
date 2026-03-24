@@ -461,27 +461,101 @@
       font-family: 'DM Mono', monospace;
     }
 
-    .progress-bar {
+    /* ── Live check feed ─────────────────────────────────────── */
+    .check-feed {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 18px;
+      max-height: 140px;
+      overflow: hidden;
+    }
+    .check-feed.visible { display: flex; }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
       background: var(--bg-primary);
       border: 1px solid var(--border);
-      border-radius: 999px;
-      height: 8px;
-      overflow: hidden;
-      margin-bottom: 12px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
     }
-
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      transition: width 0.5s ease;
+    .check-row.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
+    .check-row.exiting {
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .check-domain { color: var(--text-secondary); }
+    .check-status-available { color: #10b981; font-weight: 700; }
+    .check-status-taken     { color: var(--text-muted); }
 
-    .progress-text {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 13px;
+    /* ── Domain dot counter ───────────────────────────────────── */
+    .domain-counter {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .domain-dots {
+      display: flex;
+      gap: 8px;
+    }
+    .domain-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border-bright);
+      background: transparent;
+      transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+    }
+    .domain-dot.filled {
+      background: #10b981;
+      border-color: #10b981;
+      box-shadow: 0 0 8px rgba(16,185,129,0.5);
+      transform: scale(1.2);
+    }
+    .domain-counter-text {
       font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
     }
+    .domain-counter-text strong { color: #10b981; }
+
+    /* ── Thinking → results morph transition ─────────────────── */
+    .thinking-container.fading-out {
+      animation: thinkFadeOut 0.35s cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+    @keyframes thinkFadeOut {
+      to { opacity: 0; transform: translateY(-12px); }
+    }
+    .results-container.fading-in {
+      animation: resultsFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes resultsFadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Card child stagger reveal ────────────────────────────── */
+    @keyframes childReveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-fresh .domain-card-header { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.12s both; }
+    .card-fresh .domain-rationale   { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.21s both; }
+    .card-fresh .register-link,
+    .card-fresh .check-link         { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
 
     .trust-signals {
       display: flex;
@@ -1200,10 +1274,14 @@
 
             <div id="questionContainer"></div>
 
-            <div class="progress-bar">
-              <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            <!-- Live domain check feed — visible once stream starts -->
+            <div id="checkFeed" class="check-feed"></div>
+
+            <!-- Domain counter dots -->
+            <div class="domain-counter">
+              <div class="domain-dots" id="domainDots"></div>
+              <p class="domain-counter-text"><strong id="domainsFoundCount">0</strong> of 10 found</p>
             </div>
-            <p class="progress-text"><span id="progressText">0</span>% complete</p>
           </div>
         </div>
 
@@ -1453,10 +1531,89 @@
       el.classList.add('status-visible');
     }
 
-    function updateProgress(value) {
-      progress = value;
-      document.getElementById('progressFill').style.width = value + '%';
-      document.getElementById('progressText').textContent = value;
+    function updateProgress(_value) { /* replaced by dot counter */ }
+
+    // ── Dot counter ─────────────────────────────────────────────
+    function initDotCounter() {
+      const dots = document.getElementById('domainDots');
+      dots.innerHTML = '';
+      for (let i = 0; i < 10; i++) {
+        const d = document.createElement('div');
+        d.className = 'domain-dot';
+        dots.appendChild(d);
+      }
+      document.getElementById('domainsFoundCount').textContent = '0';
+      document.getElementById('checkFeed').innerHTML = '';
+      document.getElementById('checkFeed').classList.remove('visible');
+    }
+
+    function updateDotCounter(count) {
+      document.getElementById('domainsFoundCount').textContent = count;
+      const dots = document.getElementById('domainDots').children;
+      for (let i = 0; i < dots.length; i++) {
+        dots[i].classList.toggle('filled', i < count);
+      }
+    }
+
+    // ── Live check feed ──────────────────────────────────────────
+    const MAX_FEED_ROWS = 5;
+    function addCheckRow(domain, available) {
+      const feed = document.getElementById('checkFeed');
+      feed.classList.add('visible');
+
+      // Fade out + remove oldest row if at limit
+      if (feed.children.length >= MAX_FEED_ROWS) {
+        const oldest = feed.firstChild;
+        oldest.classList.add('exiting');
+        setTimeout(() => oldest.remove(), 220);
+      }
+
+      const row = document.createElement('div');
+      row.className = 'check-row';
+      row.innerHTML = `
+        <span class="check-domain">${domain}</span>
+        <span class="${available ? 'check-status-available' : 'check-status-taken'}">${available ? '✓ available' : '✗'}</span>
+      `;
+      feed.appendChild(row);
+      requestAnimationFrame(() => requestAnimationFrame(() => row.classList.add('visible')));
+    }
+
+    // ── Personalised thinking messages ───────────────────────────
+    function getPersonalisedMessages(description) {
+      const stopWords = new Set([
+        'a','an','the','and','or','but','for','with','in','on','at','to','of',
+        'that','this','is','are','was','be','as','by','it','its','my','our',
+        'your','we','i','you','they','he','she','app','platform','tool','service',
+        'product','business','company','startup','will','want','need','help',
+        'build','make','create','provide','based','using','which','very','just',
+        'have','has','like','into','from','also','more','some','their',
+      ]);
+      const words = description.toLowerCase()
+        .replace(/[^a-z\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 3 && !stopWords.has(w));
+
+      const k = (i) => words[i] || ['concept', 'idea', 'niche'][i] || 'business';
+
+      return [
+        [600,  `Exploring ${k(0)} vocabulary...`],
+        [1800, `Testing ${k(0)}–${k(1)} name combinations...`],
+        [2200, `Checking phonetics and recall...`],
+        [1800, `Scanning real-time availability...`],
+      ];
+    }
+
+    // ── Transition helpers ───────────────────────────────────────
+    function transitionToResults() {
+      const thinkEl   = document.getElementById('thinkingStage');
+      const resultsEl = document.getElementById('resultsStage');
+      thinkEl.classList.add('fading-out');
+      setTimeout(() => {
+        thinkEl.classList.remove('active', 'fading-out');
+        resultsEl.classList.add('active', 'fading-in');
+        resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => resultsEl.classList.remove('fading-in'), 450);
+      }, 320);
     }
 
     function renderQuestion(question) {
@@ -1626,30 +1783,22 @@
       lastAvailability = {};
       activeFilter     = 'all';
 
-      // Thinking messages shown while Claude is working
-      const thinkingMsgs = [
-        [700,  '🧠', 'Consulting my domain expertise...'],
-        [2000, '✨', 'Brainstorming creative name combinations...'],
-        [2500, '🎨', 'Testing word patterns and phonetics...'],
-        [2500, '🔍', 'Checking brand clarity and memorability...'],
-        [2000, '🔎', 'Verifying real-time availability...'],
-      ];
+      // Personalised thinking messages based on the business description
+      const thinkingMsgs = getPersonalisedMessages(description);
 
       let firstDomainReceived = false;
-      let thinkingDone = false;
+
+      // Init dot counter for this run
+      initDotCounter();
 
       // Run thinking animation concurrently with the stream
       const thinkingLoop = (async () => {
-        let progress = 55;
-        for (const [delay, emoji, text] of thinkingMsgs) {
+        for (const [delay, text] of thinkingMsgs) {
           if (firstDomainReceived) break;
           await wait(delay);
           if (firstDomainReceived) break;
-          addMessage('thinking', emoji, text);
-          progress = Math.min(progress + 8, 88);
-          updateProgress(progress);
+          addMessage('thinking', '', text);
         }
-        thinkingDone = true;
       })();
 
       // Prepare results section (hidden until first domain)
@@ -1667,41 +1816,31 @@
 
       try {
         await streamSuggestions(description, answers, token, (domain, count) => {
-          // First domain received — transition from thinking to results
+          // First domain received — morph transition from thinking to results
           if (!firstDomainReceived) {
             firstDomainReceived = true;
-            updateProgress(100);
-            document.getElementById('thinkingStage').classList.remove('active');
-            const resultsEl = document.getElementById('resultsStage');
-            resultsEl.classList.add('active');
-            resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            transitionToResults();
           }
 
-          // Hide the searching indicator when a new domain arrives
           document.getElementById('searchingIndicator').classList.remove('active');
-
-          // Remove skeleton thinking card before appending the real one
           removeThinkingCard();
 
-          // Add to state
           lastSuggestions.push(domain);
           lastAvailability[domain.name + domain.tld] = true;
           totalFound = count;
 
-          // Update live counter
           document.getElementById('availabilitySummary').innerHTML =
             `<strong>${count}</strong> of 10 domains found`;
-
-          // Append card with entrance animation
+          updateDotCounter(count);
           appendDomainCard(domain);
 
-          // Show skeleton card while waiting for the next domain
           if (count < 10) showThinkingCard();
         }, (submitted, remaining) => {
-          // Show searching indicator while Claude is nudged to find more
           document.getElementById('searchingText').textContent =
             `Found ${submitted} so far — searching for ${remaining} more…`;
           document.getElementById('searchingIndicator').classList.add('active');
+        }, (domain, available) => {
+          addCheckRow(domain, available);
         });
       } catch (err) {
         streamError = err;
@@ -1799,7 +1938,7 @@
 
     // SSE-based streaming: calls onDomain for each confirmed-available domain
     // as Claude finds it. Returns total count when stream ends.
-    async function streamSuggestions(description, answersObj, token, onDomain, onSearching) {
+    async function streamSuggestions(description, answersObj, token, onDomain, onSearching, onCheck) {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch('/api/suggest', {
@@ -1843,6 +1982,8 @@
               onDomain(event.domain, count);
             } else if (event.type === 'searching') {
               if (onSearching) onSearching(event.submitted, event.remaining);
+            } else if (event.type === 'check') {
+              if (onCheck) onCheck(event.domain, event.available);
             } else if (event.type === 'error') {
               const error = new Error(event.message || 'Stream error');
               error.status = event.status || 500;
@@ -2009,11 +2150,13 @@
     function appendDomainCard(s) {
       const grid = document.getElementById('domainsGrid');
       const div  = document.createElement('div');
-      div.className = 'domain-card card-entering';
+      div.className = 'domain-card card-entering card-fresh';
       div.innerHTML = buildCardHTML(s, lastAvailability);
       grid.appendChild(div);
-      // Double rAF ensures the browser has painted the entering state
+      // Double rAF removes the entering class so the card transitions to visible
       requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('card-entering')));
+      // Remove card-fresh after children have finished their stagger animations
+      setTimeout(() => div.classList.remove('card-fresh'), 600);
     }
 
     // Show a skeleton placeholder card in the grid while the next domain is being generated.
@@ -2031,7 +2174,6 @@
         <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
           <div class="skeleton-line skeleton-text w-full"></div>
           <div class="skeleton-line skeleton-text w-4-5"></div>
-          <div class="skeleton-line skeleton-text w-3-5"></div>
         </div>
         <div class="skeleton-line skeleton-btn"></div>
       `;
@@ -2115,8 +2257,7 @@
       document.getElementById('resultsStage').classList.remove('active');
       document.getElementById('thinkingStage').classList.add('active');
 
-      addMessage('thinking', '🔄', 'Finding fresh available domains...');
-      updateProgress(50);
+      addMessage('thinking', '', 'Finding fresh available domains...');
 
       const token       = clerk?.user ? await clerk.session.getToken() : null;
       const description = document.getElementById('businessDescription').value;
@@ -2129,10 +2270,10 @@
 
       // Prepare the results grid
       document.getElementById('domainsGrid').innerHTML = '';
-      document.querySelectorAll('.filter-pill').forEach((p, i) => p.classList.toggle('active', i === 0));
       const desc        = description.trim();
       const descPreview = desc.length > 50 ? desc.slice(0, 47) + '...' : desc;
       document.getElementById('availabilitySummary').innerHTML = `<strong>0</strong> of 10 domains found`;
+      initDotCounter();
 
       let firstDomain = false;
       let totalFound  = 0;
@@ -2142,11 +2283,7 @@
         await streamSuggestions(description, answers, token, (domain, count) => {
           if (!firstDomain) {
             firstDomain = true;
-            updateProgress(100);
-            document.getElementById('thinkingStage').classList.remove('active');
-            const resultsEl = document.getElementById('resultsStage');
-            resultsEl.classList.add('active');
-            resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            transitionToResults();
           }
           document.getElementById('searchingIndicator').classList.remove('active');
           removeThinkingCard();
@@ -2155,12 +2292,15 @@
           totalFound = count;
           document.getElementById('availabilitySummary').innerHTML =
             `<strong>${count}</strong> of 10 domains found`;
+          updateDotCounter(count);
           appendDomainCard(domain);
           if (count < 10) showThinkingCard();
         }, (submitted, remaining) => {
           document.getElementById('searchingText').textContent =
             `Found ${submitted} so far — searching for ${remaining} more…`;
           document.getElementById('searchingIndicator').classList.add('active');
+        }, (domain, available) => {
+          addCheckRow(domain, available);
         });
       } catch (err) {
         streamError = err;
