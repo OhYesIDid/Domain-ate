@@ -1,9 +1,9 @@
 import { createPublicKey, verify } from 'crypto';
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 300 };
 
 const FREE_LIMIT    = 5;
-const MAX_CHECKS    = 35;   // budget for check_domain tool calls
+const MAX_CHECKS    = 60;   // budget for check_domain tool calls
 const TARGET        = 10;   // domains to find and submit
 
 // ── Clerk JWT verification ──────────────────────────────────────────────────
@@ -505,78 +505,86 @@ export default async function handler(req, res) {
       }
 
       if (data.stop_reason === 'tool_use') {
-        const blocks      = data.content.filter(b => b.type === 'tool_use');
+        const blocks = data.content.filter(b => b.type === 'tool_use');
+
+        // ── Phase 1: quality gate (sequential — builds seenNames correctly) ──
+        const pending = blocks.map(block => {
+          if (block.name !== 'check_domain') return { block };
+
+          const domain = String(block.input.domain || '').toLowerCase().trim();
+          const tld    = domain.includes('.') ? domain.slice(domain.lastIndexOf('.')) : '';
+
+          // Budget exhausted — return without a network call
+          if (checksUsed >= MAX_CHECKS) {
+            return { block, result: { available: false, reason: 'check budget exhausted — stop and summarise what you have found' } };
+          }
+
+          // Quality gate (free, no network)
+          const gateErr = qualityGate(domain, seenNames, submittedNames);
+          if (gateErr) {
+            return { block, result: { available: false, reason: `quality: ${gateErr}` } };
+          }
+
+          // Passed — reserve a budget slot and mark as seen
+          checksUsed++;
+          seenNames.push(domain.slice(0, domain.lastIndexOf('.')));
+          return { block, domain, tld, needsRdap: true };
+        });
+
+        // ── Phase 2: parallel RDAP for all domains that passed quality gate ──
+        await Promise.all(pending.map(async p => {
+          if (!p.needsRdap) return;
+          const cached = await getCached(p.domain);
+          if (cached !== null) {
+            recordTld(p.tld, cached.available, ctx);
+            p.result = cached.available
+              ? { available: true,  reason: cached.premium ? `available (premium ~$${cached.price}/yr)` : 'available (cached)' }
+              : { available: false, reason: 'taken (cached) — invent a completely new concept' };
+          } else {
+            const available = await rdapCheck(p.domain);
+            setCache(p.domain, available).catch(() => {});
+            recordTld(p.tld, available, ctx);
+            p.result = available === true
+              ? { available: true,  reason: 'available — call submit_domain now' }
+              : available === false
+              ? { available: false, reason: 'taken — invent a completely new concept, do not retry variations' }
+              : { available: false, reason: 'inconclusive — treat as unavailable and try a different concept' };
+          }
+        }));
+
+        // ── Phase 3: handle submit_domain + build tool results ───────────────
         const toolResults = [];
+        for (const p of pending) {
+          let result = p.result;
 
-        // Sequential execution keeps the seenNames diversity list consistent
-        for (const block of blocks) {
-          let result;
-
-          // ── check_domain ────────────────────────────────────────────────────
-          if (block.name === 'check_domain') {
-            const domain = String(block.input.domain || '').toLowerCase().trim();
-            const tld    = domain.includes('.') ? domain.slice(domain.lastIndexOf('.')) : '';
-
-            // 1. Quality gate (no network) — free, doesn't count against budget
-            const gateErr = qualityGate(domain, seenNames, submittedNames);
-            if (gateErr) {
-              result = { available: false, reason: `quality: ${gateErr}` };
-            } else {
-              // Passed quality gate — now costs a budget check (network call follows)
-              checksUsed++;
-              // Mark name as seen so near-duplicates fail diversity check
-              seenNames.push(domain.slice(0, domain.lastIndexOf('.')));
-
-              // 2. Cache lookup (cross-user, accumulated over time)
-              const cached = await getCached(domain);
-              if (cached !== null) {
-                recordTld(tld, cached.available, ctx);
-                result = cached.available
-                  ? { available: true,  reason: cached.premium ? `available (premium ~$${cached.price}/yr)` : 'available (cached)' }
-                  : { available: false, reason: 'taken (cached) — invent a completely new concept' };
-              } else {
-                // 3. Live RDAP check
-                const available = await rdapCheck(domain);
-                setCache(domain, available).catch(() => {});
-                recordTld(tld, available, ctx);
-                result = available === true
-                  ? { available: true,  reason: 'available — call submit_domain now' }
-                  : available === false
-                  ? { available: false, reason: 'taken — invent a completely new concept, do not retry variations' }
-                  : { available: false, reason: 'inconclusive — treat as unavailable and try a different concept' };
-              }
-            }
-
-          // ── submit_domain ───────────────────────────────────────────────────
-          } else if (block.name === 'submit_domain') {
+          if (p.block.name === 'submit_domain') {
             if (submitted < TARGET) {
               const domain = {
-                name:       String(block.input.name      || '').toLowerCase().trim(),
-                tld:        String(block.input.tld       || '').trim(),
-                style:      ['brandable', 'keyword', 'hybrid'].includes(block.input.style)
-                              ? block.input.style : 'brandable',
-                rationale:  String(block.input.rationale || '').trim().slice(0, 120),
-                confidence: Math.min(10, Math.max(1, parseInt(block.input.confidence) || 7)),
+                name:       String(p.block.input.name      || '').toLowerCase().trim(),
+                tld:        String(p.block.input.tld       || '').trim(),
+                style:      ['brandable', 'keyword', 'hybrid'].includes(p.block.input.style)
+                              ? p.block.input.style : 'brandable',
+                rationale:  String(p.block.input.rationale || '').trim().slice(0, 120),
+                confidence: Math.min(10, Math.max(1, parseInt(p.block.input.confidence) || 7)),
               };
               submittedNames.push(domain.name);
               submitted++;
               send({ type: 'domain', domain });
             }
             result = { accepted: true, submitted, remaining: TARGET - submitted };
-
-          } else {
+          } else if (!result) {
             result = { error: 'unknown tool' };
           }
 
           toolResults.push({
             type:        'tool_result',
-            tool_use_id: block.id,
+            tool_use_id: p.block.id,
             content:     JSON.stringify(result),
           });
         }
 
-        // Track whether budget is running low (used in end_turn nudge only — never mix text+tool_result blocks)
-        if (!budgetWarned && checksUsed >= Math.floor(MAX_CHECKS * 0.4) && submitted < Math.floor(TARGET * 0.3)) {
+        // Track budget pressure for end_turn nudge
+        if (!budgetWarned && checksUsed >= Math.floor(MAX_CHECKS * 0.5) && submitted < Math.floor(TARGET * 0.5)) {
           budgetWarned = true;
         }
 
