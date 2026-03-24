@@ -221,6 +221,26 @@
       font-family: Inter, system-ui, sans-serif;
     }
 
+    /* ── Brief recap bubble (thinking stage) ─────────────────── */
+    .brief-bubble-wrap {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 18px;
+    }
+    .brief-bubble {
+      max-width: 80%;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 18px 18px 4px 18px;
+      padding: 12px 16px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
     .cta-button {
       width: 100%;
       padding: 24px;
@@ -1268,7 +1288,9 @@
 
         <div id="thinkingStage" class="thinking-container">
           <div class="input-wrapper">
-            <p class="cta-subheading mono" id="businessDesc" style="margin-bottom:16px;"></p>
+            <div class="brief-bubble-wrap">
+              <div class="brief-bubble" id="businessDesc"></div>
+            </div>
 
             <div class="status-message" id="statusMessage">
               <div class="status-indicator" id="statusIndicator"></div>
