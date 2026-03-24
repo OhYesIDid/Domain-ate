@@ -2204,7 +2204,7 @@
         </div>
         <p style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);text-align:center;margin:4px 0 2px;">Each domain appears the moment it's confirmed available</p>
       `;
-      grid.appendChild(div);
+      grid.prepend(div);
       requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('card-entering')));
     }
 
