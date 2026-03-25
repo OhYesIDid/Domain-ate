@@ -575,8 +575,10 @@
     }
     .card-fresh .domain-card-header { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.12s both; }
     .card-fresh .domain-rationale   { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.21s both; }
+    .card-fresh .alt-tld-row        { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
+    .card-fresh .social-handle-row  { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
     .card-fresh .register-link,
-    .card-fresh .check-link         { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
+    .card-fresh .check-link         { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.33s both; }
 
     .trust-signals {
       display: flex;
@@ -860,6 +862,119 @@
     }
     .check-link:hover {
       border-color: var(--border-bright);
+      color: var(--text-secondary);
+    }
+
+    /* ── Alt TLD pills ───────────────────────────────────────────────────── */
+    .alt-tld-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 6px 0 2px;
+    }
+    .alt-tld-pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      transition: opacity 0.2s;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .alt-tld-pill.avail {
+      color: #10b981;
+      border-color: rgba(16,185,129,0.35);
+      background: rgba(16,185,129,0.08);
+    }
+    .alt-tld-pill.avail:hover {
+      background: rgba(16,185,129,0.18);
+    }
+    .alt-tld-pill.taken {
+      color: var(--text-muted);
+      opacity: 0.45;
+      text-decoration: line-through;
+      cursor: default;
+    }
+    .alt-tld-pill.placeholder {
+      width: 42px;
+      height: 22px;
+      background: var(--surface-2);
+      animation: skeletonPulse 1.4s ease-in-out infinite;
+    }
+    .alt-tld-loading {
+      opacity: 0.5;
+    }
+
+    /* ── History badge ───────────────────────────────────────────────────── */
+    .history-badge {
+      min-height: 0;
+    }
+    .history-pill {
+      display: inline-block;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      text-decoration: none;
+    }
+    .history-pill.used {
+      color: #f59e0b;
+      background: rgba(245,158,11,0.1);
+      border: 1px solid rgba(245,158,11,0.3);
+    }
+    .history-pill.used:hover {
+      background: rgba(245,158,11,0.2);
+    }
+    .history-pill.clean {
+      color: var(--text-muted);
+      opacity: 0.6;
+      font-size: 10px;
+    }
+
+    /* ── Social handle row ───────────────────────────────────────────────── */
+    .social-handle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0 2px;
+    }
+    .social-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .social-icon-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      transition: all 0.18s;
+      flex-shrink: 0;
+    }
+    .social-icon-link svg {
+      width: 14px;
+      height: 14px;
+    }
+    .social-icon-link:hover {
+      border-color: var(--border-bright);
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.04);
+    }
+    .social-namechkr {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-left: auto;
+      transition: color 0.18s;
+    }
+    .social-namechkr:hover {
       color: var(--text-secondary);
     }
 
@@ -1528,6 +1643,7 @@
     let lastAvailability = {};
     let lastPremiumPrices = {};
     let lastPrices = {};
+    let lastAltTlds = {};   // name → [{ tld, available, premium, price }]
     let userCurrency = 'USD';
     let userRate = 1;
     let activeFilter = 'all';
@@ -1808,6 +1924,7 @@
       // Reset state for this consultation
       lastSuggestions  = [];
       lastAvailability = {};
+      lastAltTlds      = {};
       activeFilter     = 'all';
 
       // Personalised thinking messages based on the business description
@@ -2011,6 +2128,10 @@
               if (onSearching) onSearching(event.submitted, event.remaining);
             } else if (event.type === 'check') {
               if (onCheck) onCheck(event.domain, event.available);
+            } else if (event.type === 'altTlds') {
+              // Store alt TLD results and patch any already-rendered card
+              lastAltTlds[event.name] = event.tlds;
+              patchCardAltTlds(event.name, event.tlds);
             } else if (event.type === 'error') {
               const error = new Error(event.message || 'Stream error');
               error.status = event.status || 500;
@@ -2139,7 +2260,6 @@
       const availLabel  = avail === false ? '✗ Taken' : avail === true ? '✓ Available' : '? Unknown';
       const registerUrl = `https://www.namecheap.com/domains/registration/results/?domain=${encodeURIComponent(fullDomain)}`;
       const whoisUrl    = `https://www.whois.com/whois/${encodeURIComponent(fullDomain)}`;
-      const namechkUrl  = `https://namechk.com/${encodeURIComponent(s.name)}`;
       const premiumUsd  = lastPremiumPrices[fullDomain];
       const stdPrice    = lastPrices[s.tld];
       const isPremium   = premiumUsd != null;
@@ -2148,13 +2268,42 @@
         ? `${compactPrice(premiumUsd, userRate, userCurrency)}/yr ⭐`
         : stdPrice != null ? `${compactPrice(stdPrice, userRate, userCurrency)}/yr` : null;
 
-      // CTA label: show price when available, skeleton dots while loading
-      const registerLabel = ctaPrice
-        ? `Register for ${ctaPrice}`
-        : priceLoaded ? 'Register on Namecheap →' : 'Register on Namecheap →';
-      const checkLabel = ctaPrice
-        ? `Check availability → ${ctaPrice}`
-        : 'Check availability →';
+      // CTA label
+      const registerLabel = ctaPrice ? `Register for ${ctaPrice}` : 'Register on Namecheap →';
+      const checkLabel    = ctaPrice ? `Check availability → ${ctaPrice}` : 'Check availability →';
+
+      // Alt TLD pills
+      const altTlds     = lastAltTlds[s.name] || [];
+      const altTldHtml  = altTlds.length > 0
+        ? `<div class="alt-tld-row">${altTlds.map(t => {
+            const altDomain = s.name + t.tld;
+            const altUrl    = `https://www.namecheap.com/domains/registration/results/?domain=${encodeURIComponent(altDomain)}`;
+            const cls       = t.available ? 'alt-tld-pill avail' : 'alt-tld-pill taken';
+            const priceStr  = t.available && t.price ? ` · ${compactPrice(t.price, userRate, userCurrency)}` : '';
+            return t.available
+              ? `<a href="${altUrl}" target="_blank" rel="noopener" class="${cls}">${escapeHtml(t.tld)}${priceStr}</a>`
+              : `<span class="${cls}">${escapeHtml(t.tld)}</span>`;
+          }).join('')}</div>`
+        : `<div class="alt-tld-row alt-tld-loading"><span class="alt-tld-pill placeholder"></span><span class="alt-tld-pill placeholder"></span><span class="alt-tld-pill placeholder"></span></div>`;
+
+      // Social handle links (Option D — icon links to platform search)
+      const base = encodeURIComponent(s.name);
+      const socialHtml = `<div class="social-handle-row">
+        <span class="social-label">Check handles:</span>
+        <a href="https://www.instagram.com/${base}" target="_blank" rel="noopener" class="social-icon-link" title="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        </a>
+        <a href="https://x.com/${base}" target="_blank" rel="noopener" class="social-icon-link" title="X / Twitter">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.262 5.634 5.902-5.634Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a href="https://www.tiktok.com/@${base}" target="_blank" rel="noopener" class="social-icon-link" title="TikTok">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.2 8.2 0 004.79 1.53V6.75a4.85 4.85 0 01-1.02-.06z"/></svg>
+        </a>
+        <a href="https://namechkr.com/${base}" target="_blank" rel="noopener" class="social-namechkr">all platforms →</a>
+      </div>`;
+
+      // History badge placeholder — filled async by fetchDomainHistory()
+      const historyHtml = `<div class="history-badge" data-domain="${escapeHtml(fullDomain)}" data-state="loading"></div>`;
 
       return `
         <div class="domain-card-header">
@@ -2164,12 +2313,70 @@
         </div>
         ${renderScorePill(s, availability)}
         <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
+        ${altTldHtml}
+        ${historyHtml}
+        ${socialHtml}
         ${avail === true
           ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">${registerLabel}</a>`
           : avail === false
           ? ''
           : `<a class="check-link" href="${whoisUrl}" target="_blank" rel="noopener">${checkLabel}</a>`}
       `;
+    }
+
+    // Patch alt TLD pills into an already-rendered card (called when altTlds SSE arrives after card).
+    function patchCardAltTlds(name, tlds) {
+      const cards = document.querySelectorAll('#domainsGrid .domain-card');
+      for (const card of cards) {
+        const nameEl = card.querySelector('.domain-name span');
+        if (!nameEl) continue;
+        // Extract the base name (text before the .tld span)
+        const tldEl   = nameEl.querySelector('.tld');
+        const cardName = nameEl.childNodes[0]?.textContent?.trim() || '';
+        if (cardName !== name) continue;
+        const row = card.querySelector('.alt-tld-row');
+        if (!row) continue;
+        // Re-build the pills using the real data
+        const tld = tldEl?.textContent || '';
+        const fake = { name, tld };
+        // Temporarily inject into lastAltTlds so buildCardHTML picks it up
+        // but we patch directly here to avoid full re-render
+        row.innerHTML = tlds.map(t => {
+          const altDomain = name + t.tld;
+          const altUrl    = `https://www.namecheap.com/domains/registration/results/?domain=${encodeURIComponent(altDomain)}`;
+          const cls       = t.available ? 'alt-tld-pill avail' : 'alt-tld-pill taken';
+          const priceStr  = t.available && t.price ? ` · ${compactPrice(t.price, userRate, userCurrency)}` : '';
+          return t.available
+            ? `<a href="${altUrl}" target="_blank" rel="noopener" class="${cls}">${escapeHtml(t.tld)}${priceStr}</a>`
+            : `<span class="${cls}">${escapeHtml(t.tld)}</span>`;
+        }).join('');
+        row.classList.remove('alt-tld-loading');
+      }
+    }
+
+    // Fetch Wayback Machine history for a domain and update the badge in-place.
+    async function fetchDomainHistory(domain) {
+      const badges = document.querySelectorAll(`.history-badge[data-domain="${CSS.escape(domain)}"]`);
+      if (!badges.length) return;
+      try {
+        const url = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(domain)}&output=json&limit=1&fl=timestamp,statuscode&filter=statuscode:200`;
+        const res  = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        const data = await res.json();
+        const hasHistory = Array.isArray(data) && data.length > 1; // first row is header
+        for (const badge of badges) {
+          if (hasHistory) {
+            const ts        = data[1][0]; // e.g. "20190312143021"
+            const year      = ts.slice(0, 4);
+            const archiveUrl = `https://web.archive.org/web/*/${domain}`;
+            badge.innerHTML  = `<a href="${archiveUrl}" target="_blank" rel="noopener" class="history-pill used" title="This domain had web content in ${year}">⚠ Previously used · ${year}</a>`;
+          } else {
+            badge.innerHTML = `<span class="history-pill clean">✦ No prior history</span>`;
+          }
+          badge.dataset.state = 'loaded';
+        }
+      } catch {
+        for (const badge of badges) badge.remove(); // silently hide on network error
+      }
     }
 
     // Append a single card to the grid with an entrance animation.
@@ -2184,6 +2391,8 @@
       requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('card-entering')));
       // Remove card-fresh after children have finished their stagger animations
       setTimeout(() => div.classList.remove('card-fresh'), 600);
+      // Async: fetch domain history from Wayback Machine and patch badge in-place
+      fetchDomainHistory(s.name + s.tld);
     }
 
     // Show a skeleton placeholder card in the grid while the next domain is being generated.
@@ -2232,6 +2441,10 @@
       grid.innerHTML = filtered.map(s =>
         `<div class="domain-card ${availability[s.name + s.tld] === false ? 'taken' : ''}">${buildCardHTML(s, availability)}</div>`
       ).join('');
+      // Re-fetch history for re-rendered cards (badges are reset by innerHTML replacement)
+      for (const s of filtered) {
+        if (availability[s.name + s.tld] === true) fetchDomainHistory(s.name + s.tld);
+      }
     }
 
     function showResults(suggestions, availability, prices = {}, premiumPrices = {}) {
@@ -2293,6 +2506,7 @@
       lastSuggestions   = [];
       lastAvailability  = {};
       lastPremiumPrices = {};
+      lastAltTlds       = {};
       activeFilter      = 'all';
 
       // Prepare the results grid
