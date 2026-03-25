@@ -573,7 +573,7 @@ export default async function handler(req, res) {
     return { content, stop_reason: hasFn ? 'tool_use' : 'end_turn' };
   }
 
-  // ── Gemini API call (free-tier fallback) ──────────────────────────────────────
+  // ── Gemini API call (free-tier fallback) with retry on 429 ───────────────────
   async function callGemini(messages, systemPrompt) {
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error('GEMINI_API_KEY not set');
@@ -588,13 +588,27 @@ export default async function handler(req, res) {
       tools:             [{ functionDeclarations }],
       generationConfig:  { maxOutputTokens: 4096 },
     });
-    const res  = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      { method: 'POST', headers: { 'content-type': 'application/json' }, body, signal: AbortSignal.timeout(60_000) }
-    );
-    const data = await res.json();
-    if (!res.ok) throw new Error(`Gemini API: ${res.status} ${JSON.stringify(data).slice(0, 200)}`);
-    return fromGeminiResponse(data);
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+    let lastErr;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res  = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body, signal: AbortSignal.timeout(60_000) });
+        const data = await res.json();
+        if (res.ok) return fromGeminiResponse(data);
+        if (res.status === 429 && attempt < 2) {
+          const delay = Math.pow(2, attempt + 2) * 1000; // 4s, 8s
+          console.warn(`Gemini 429 — retry in ${delay}ms`);
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        lastErr = new Error(`Gemini API: ${res.status} ${JSON.stringify(data).slice(0, 200)}`);
+        break;
+      } catch (e) {
+        lastErr = e;
+        if (attempt < 2) await new Promise(r => setTimeout(r, Math.pow(2, attempt + 2) * 1000));
+      }
+    }
+    throw lastErr;
   }
 
   // ── Primary: Anthropic with retry; fallback: Gemini ──────────────────────────
