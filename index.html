@@ -2038,7 +2038,10 @@
           showUpgradeModal();
           return;
         }
-        showResultsError('AI suggestions are unavailable right now. Please try again in a moment.');
+        showResultsError(
+          streamError.message || 'AI suggestions are unavailable right now. Please try again in a moment.',
+          streamError.detail
+        );
         return;
       }
 
@@ -2172,6 +2175,7 @@
             } else if (event.type === 'error') {
               const error = new Error(event.message || 'Stream error');
               error.status = event.status || 500;
+              error.detail = event.detail || '';
               throw error;
             }
           } catch (e) {
@@ -2620,13 +2624,18 @@
       renderDomainCards(lastSuggestions, lastAvailability);
     }
 
-    function showResultsError(message) {
+    function showResultsError(message, detail) {
       document.getElementById('thinkingStage').classList.remove('active');
+
+      const detailHtml = detail
+        ? `<p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-top:6px;word-break:break-all;">${escapeHtml(detail)}</p>`
+        : '';
 
       const grid = document.getElementById('domainsGrid');
       grid.innerHTML = `
         <div class="results-error" style="grid-column: 1 / -1;">
           <p>⚠️ ${escapeHtml(message)}</p>
+          ${detailHtml}
         </div>
       `;
 

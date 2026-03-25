@@ -764,13 +764,15 @@ export default async function handler(req, res) {
     send({ type: 'done', count: submitted });
 
   } catch (err) {
-    console.error('suggest.js error:', err.message || err);
-    const isRateLimit = /429|529|rate.limit|overload/i.test(err.message || '');
+    const msg = err.message || String(err);
+    console.error('suggest.js error:', msg);
+    const isRateLimit = /429|529|rate.limit|overload/i.test(msg);
     send({
       type: 'error',
       message: isRateLimit
         ? 'The AI service is busy right now — please try again in a few seconds.'
         : 'Failed to generate suggestions. Please try again.',
+      detail: msg.slice(0, 200),
     });
   }
 
