@@ -586,9 +586,10 @@ export default async function handler(req, res) {
       systemInstruction: { parts: [{ text: systemPrompt }] },
       contents:          toGeminiContents(messages),
       tools:             [{ functionDeclarations }],
-      generationConfig:  { maxOutputTokens: 4096 },
+      generationConfig:  { maxOutputTokens: 2048 },
     });
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+    // gemini-2.5-flash-lite: 15 RPM, 1,000 RPD on free tier (best free-tier headroom)
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${key}`;
     let lastErr;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
@@ -596,7 +597,7 @@ export default async function handler(req, res) {
         const data = await res.json();
         if (res.ok) return fromGeminiResponse(data);
         if (res.status === 429 && attempt < 2) {
-          const delay = Math.pow(2, attempt + 2) * 1000; // 4s, 8s
+          const delay = [7000, 15000][attempt]; // 7s, 15s — respects 15 RPM (4s min) with buffer
           console.warn(`Gemini 429 — retry in ${delay}ms`);
           await new Promise(r => setTimeout(r, delay));
           continue;
@@ -605,7 +606,7 @@ export default async function handler(req, res) {
         break;
       } catch (e) {
         lastErr = e;
-        if (attempt < 2) await new Promise(r => setTimeout(r, Math.pow(2, attempt + 2) * 1000));
+        if (attempt < 2) await new Promise(r => setTimeout(r, [7000, 15000][attempt]));
       }
     }
     throw lastErr;
