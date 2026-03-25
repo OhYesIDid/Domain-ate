@@ -521,28 +521,44 @@ export default async function handler(req, res) {
   const seenNames       = []; // names that passed quality gate — edit-distance diversity
   const submittedNames  = []; // names actually submitted — semantic concept dedup
 
+  // ── Anthropic API call with retry on 429/529 ─────────────────────────────────
+  async function callClaude(messages, systemPrompt) {
+    const body = JSON.stringify({
+      model:      'claude-sonnet-4-5',
+      max_tokens: 4096,
+      system:     systemPrompt,
+      tools:      TOOLS,
+      messages,
+    });
+    const headers = {
+      'x-api-key':         process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type':      'application/json',
+    };
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const res  = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers, body,
+        signal: AbortSignal.timeout(60_000),
+      });
+      const data = await res.json();
+      if (res.ok) return data;
+      // Retry on rate-limit (429) or overloaded (529) with exponential backoff
+      if ((res.status === 429 || res.status === 529) && attempt < 3) {
+        const delay = (res.headers.get('retry-after') || Math.pow(2, attempt + 1)) * 1000;
+        console.warn(`Anthropic ${res.status} — retrying in ${delay}ms (attempt ${attempt + 1})`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      throw new Error(`Anthropic API: ${res.status} ${JSON.stringify(data)}`);
+    }
+  }
+
   try {
     let turns = 0;
     while (submitted < TARGET && checksUsed < MAX_CHECKS && turns < 20) {
       turns++;
-      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key':         process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'content-type':      'application/json',
-        },
-        body: JSON.stringify({
-          model:      'claude-sonnet-4-6',
-          max_tokens: 4096,
-          system:     systemPrompt,
-          tools:      TOOLS,
-          messages,
-        }),
-      });
-
-      const data = await claudeRes.json();
-      if (!claudeRes.ok) throw new Error(`Anthropic API: ${claudeRes.status} ${JSON.stringify(data)}`);
+      const data = await callClaude(messages, systemPrompt);
+      if (!data) throw new Error('No response from Anthropic API');
 
       messages.push({ role: 'assistant', content: data.content });
 
