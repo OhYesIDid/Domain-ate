@@ -2371,14 +2371,10 @@
       const badges = document.querySelectorAll(`.history-badge[data-domain="${CSS.escape(domain)}"]`);
       if (!badges.length) return;
       try {
-        const url = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(domain)}&output=json&limit=1&fl=timestamp,statuscode&filter=statuscode:200`;
-        const res  = await fetch(url, { signal: AbortSignal.timeout(8000) });
-        const data = await res.json();
-        const hasHistory = Array.isArray(data) && data.length > 1; // first row is header
+        const res  = await fetch(`/api/wayback?domain=${encodeURIComponent(domain)}`);
+        const { hasHistory, year } = await res.json();
         for (const badge of badges) {
           if (hasHistory) {
-            const ts        = data[1][0]; // e.g. "20190312143021"
-            const year      = ts.slice(0, 4);
             const archiveUrl = `https://web.archive.org/web/*/${domain}`;
             badge.innerHTML  = `<a href="${archiveUrl}" target="_blank" rel="noopener" class="history-pill used" title="This domain had web content in ${year}">⚠ Previously used · ${year}</a>`;
           } else {
