@@ -619,65 +619,7 @@ export default async function handler(req, res) {
           }
         }
 
-        // ── Phase 3a: alt-TLD batch check for submit_domain blocks ──────────────
-        // For each domain being submitted, check a fixed set of alt TLDs in bulk.
-        // Results are fire-and-forget (don't block the tool results response).
-        const ALT_TLDS = ['.com', '.io', '.co', '.ai', '.app'];
-        const altTldJobs = []; // { name, tld, domain }
-
-        for (const p of pending) {
-          if (p.block.name !== 'submit_domain') continue;
-          if (submitted >= TARGET) continue;
-          const name    = String(p.block.input.name || '').toLowerCase().trim();
-          const mainTld = String(p.block.input.tld  || '').trim();
-          for (const t of ALT_TLDS) {
-            if (t === mainTld) continue;          // skip the one Claude already checked
-            altTldJobs.push({ name, tld: t, domain: name + t });
-          }
-        }
-
-        if (altTldJobs.length > 0) {
-          // Run async — don't await, so it doesn't slow down the main loop
-          (async () => {
-            try {
-              // Resolve from cache first, collect uncached
-              const uncachedJobs = [];
-              const altResults   = {};
-              await Promise.all(altTldJobs.map(async job => {
-                const cached = await getCached(job.domain);
-                if (cached !== null) {
-                  altResults[job.domain] = { available: cached.available, premium: cached.premium || false, price: cached.price ?? null };
-                } else {
-                  uncachedJobs.push(job);
-                }
-              }));
-
-              if (uncachedJobs.length > 0) {
-                const batch = await batchCheck(uncachedJobs.map(j => j.domain), clientIp);
-                for (const job of uncachedJobs) {
-                  const r = batch[job.domain] ?? { available: null, premium: false, price: null };
-                  setCache(job.domain, r.available, r.premium ? r.price : null).catch(() => {});
-                  altResults[job.domain] = r;
-                }
-              }
-
-              // Group by name and emit one altTlds event per submitted domain
-              const byName = {};
-              for (const job of altTldJobs) {
-                if (!byName[job.name]) byName[job.name] = [];
-                const r = altResults[job.domain];
-                if (r) byName[job.name].push({ tld: job.tld, available: r.available === true, premium: r.premium || false, price: r.price });
-              }
-              for (const [name, tlds] of Object.entries(byName)) {
-                send({ type: 'altTlds', name, tlds });
-              }
-            } catch (err) {
-              console.warn('alt-TLD check failed:', err.message);
-            }
-          })();
-        }
-
-        // ── Phase 3b: handle submit_domain + build tool results ──────────────
+        // ── Phase 3: handle submit_domain + build tool results ───────────────
         const toolResults = [];
         for (const p of pending) {
           let result = p.result;

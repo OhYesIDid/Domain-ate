@@ -2128,10 +2128,6 @@
               if (onSearching) onSearching(event.submitted, event.remaining);
             } else if (event.type === 'check') {
               if (onCheck) onCheck(event.domain, event.available);
-            } else if (event.type === 'altTlds') {
-              // Store alt TLD results and patch any already-rendered card
-              lastAltTlds[event.name] = event.tlds;
-              patchCardAltTlds(event.name, event.tlds);
             } else if (event.type === 'error') {
               const error = new Error(event.message || 'Stream error');
               error.status = event.status || 500;
@@ -2324,23 +2320,18 @@
       `;
     }
 
-    // Patch alt TLD pills into an already-rendered card (called when altTlds SSE arrives after card).
+    // Patch alt TLD pills into a rendered card using pre-fetched tld results.
     function patchCardAltTlds(name, tlds) {
+      // Store results so re-renders (sort, filter) also include them
+      lastAltTlds[name] = tlds;
       const cards = document.querySelectorAll('#domainsGrid .domain-card');
       for (const card of cards) {
-        const nameEl = card.querySelector('.domain-name span');
+        const nameEl  = card.querySelector('.domain-name span');
         if (!nameEl) continue;
-        // Extract the base name (text before the .tld span)
-        const tldEl   = nameEl.querySelector('.tld');
         const cardName = nameEl.childNodes[0]?.textContent?.trim() || '';
         if (cardName !== name) continue;
         const row = card.querySelector('.alt-tld-row');
         if (!row) continue;
-        // Re-build the pills using the real data
-        const tld = tldEl?.textContent || '';
-        const fake = { name, tld };
-        // Temporarily inject into lastAltTlds so buildCardHTML picks it up
-        // but we patch directly here to avoid full re-render
         row.innerHTML = tlds.map(t => {
           const altDomain = name + t.tld;
           const altUrl    = `https://www.namecheap.com/domains/registration/results/?domain=${encodeURIComponent(altDomain)}`;
@@ -2351,6 +2342,27 @@
             : `<span class="${cls}">${escapeHtml(t.tld)}</span>`;
         }).join('');
         row.classList.remove('alt-tld-loading');
+      }
+    }
+
+    // Client-side alt TLD check: after a domain card appears, batch-check the other TLDs
+    // via /api/check-domains (completely independent of the main SSE stream).
+    const ALT_TLDS = ['.com', '.io', '.co', '.ai', '.app'];
+    async function fetchAltTlds(name, mainTld) {
+      try {
+        const alts = ALT_TLDS.filter(t => t !== mainTld).map(t => name + t);
+        const { results, premiumPrices } = await checkDomainAvailability(alts);
+        const tlds = ALT_TLDS
+          .filter(t => t !== mainTld)
+          .map(t => {
+            const d     = name + t;
+            const avail = results[d];
+            const price = premiumPrices[d] ?? lastPrices[t] ?? null;
+            return { tld: t, available: avail === true, price: avail === true ? price : null };
+          });
+        patchCardAltTlds(name, tlds);
+      } catch {
+        // On failure just leave the skeleton pills — they don't break anything
       }
     }
 
@@ -2391,7 +2403,8 @@
       requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('card-entering')));
       // Remove card-fresh after children have finished their stagger animations
       setTimeout(() => div.classList.remove('card-fresh'), 600);
-      // Async: fetch domain history from Wayback Machine and patch badge in-place
+      // Async: fetch alt TLD availability and domain history independently of the stream
+      fetchAltTlds(s.name, s.tld);
       fetchDomainHistory(s.name + s.tld);
     }
 
@@ -2441,9 +2454,14 @@
       grid.innerHTML = filtered.map(s =>
         `<div class="domain-card ${availability[s.name + s.tld] === false ? 'taken' : ''}">${buildCardHTML(s, availability)}</div>`
       ).join('');
-      // Re-fetch history for re-rendered cards (badges are reset by innerHTML replacement)
+      // Re-fetch history and patch alt TLDs for re-rendered cards
+      // (badges/pills are reset by innerHTML replacement, but alt TLD data is in lastAltTlds already)
       for (const s of filtered) {
-        if (availability[s.name + s.tld] === true) fetchDomainHistory(s.name + s.tld);
+        if (availability[s.name + s.tld] !== true) continue;
+        fetchDomainHistory(s.name + s.tld);
+        // If alt TLDs not yet loaded for this card, kick off a fresh fetch
+        if (!lastAltTlds[s.name]) fetchAltTlds(s.name, s.tld);
+        else patchCardAltTlds(s.name, lastAltTlds[s.name]); // re-apply cached data
       }
     }
 
