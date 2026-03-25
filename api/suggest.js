@@ -521,43 +521,116 @@ export default async function handler(req, res) {
   const seenNames       = []; // names that passed quality gate — edit-distance diversity
   const submittedNames  = []; // names actually submitted — semantic concept dedup
 
-  // ── Anthropic API call with retry on 429/529 ─────────────────────────────────
-  async function callClaude(messages, systemPrompt) {
-    const body = JSON.stringify({
-      model:      'claude-sonnet-4-5',
-      max_tokens: 4096,
-      system:     systemPrompt,
-      tools:      TOOLS,
-      messages,
-    });
-    const headers = {
-      'x-api-key':         process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type':      'application/json',
-    };
-    for (let attempt = 0; attempt < 4; attempt++) {
-      const res  = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST', headers, body,
-        signal: AbortSignal.timeout(60_000),
-      });
-      const data = await res.json();
-      if (res.ok) return data;
-      // Retry on rate-limit (429) or overloaded (529) with exponential backoff
-      if ((res.status === 429 || res.status === 529) && attempt < 3) {
-        const delay = (res.headers.get('retry-after') || Math.pow(2, attempt + 1)) * 1000;
-        console.warn(`Anthropic ${res.status} — retrying in ${delay}ms (attempt ${attempt + 1})`);
-        await new Promise(r => setTimeout(r, delay));
-        continue;
+  // ── Gemini format converters ──────────────────────────────────────────────────
+
+  // Convert Anthropic-format messages → Gemini contents array.
+  // Builds a toolIdToName map on the fly so tool_result blocks can get their name.
+  function toGeminiContents(msgs) {
+    const idToName = {};
+    const contents = [];
+    for (const msg of msgs) {
+      const role    = msg.role === 'assistant' ? 'model' : 'user';
+      const payload = msg.content;
+      const parts   = [];
+
+      if (typeof payload === 'string') {
+        parts.push({ text: payload });
+      } else {
+        for (const block of payload) {
+          if (block.type === 'text' && block.text) {
+            parts.push({ text: block.text });
+          } else if (block.type === 'tool_use') {
+            idToName[block.id] = block.name;
+            parts.push({ functionCall: { name: block.name, args: block.input || {} } });
+          } else if (block.type === 'tool_result') {
+            const name = idToName[block.tool_use_id] || 'check_domain';
+            let response;
+            try { response = JSON.parse(block.content); } catch { response = { result: String(block.content) }; }
+            parts.push({ functionResponse: { name, response } });
+          }
+        }
       }
-      throw new Error(`Anthropic API: ${res.status} ${JSON.stringify(data)}`);
+      if (parts.length > 0) contents.push({ role, parts });
     }
+    return contents;
+  }
+
+  // Convert Gemini response → Anthropic-format { content, stop_reason }.
+  function fromGeminiResponse(geminiData) {
+    const candidate = geminiData.candidates?.[0];
+    if (!candidate) throw new Error(`Gemini: no candidates — ${JSON.stringify(geminiData).slice(0, 200)}`);
+    const parts   = candidate.content?.parts || [];
+    const content = [];
+    let   hasFn   = false;
+    for (let i = 0; i < parts.length; i++) {
+      const p = parts[i];
+      if (p.text)         content.push({ type: 'text', text: p.text });
+      if (p.functionCall) {
+        hasFn = true;
+        content.push({ type: 'tool_use', id: `g_${i}`, name: p.functionCall.name, input: p.functionCall.args || {} });
+      }
+    }
+    return { content, stop_reason: hasFn ? 'tool_use' : 'end_turn' };
+  }
+
+  // ── Gemini API call (free-tier fallback) ──────────────────────────────────────
+  async function callGemini(messages, systemPrompt) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) throw new Error('GEMINI_API_KEY not set');
+    const functionDeclarations = TOOLS.map(t => ({
+      name:        t.name,
+      description: t.description,
+      parameters:  t.input_schema,
+    }));
+    const body = JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents:          toGeminiContents(messages),
+      tools:             [{ functionDeclarations }],
+      generationConfig:  { maxOutputTokens: 4096 },
+    });
+    const res  = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      { method: 'POST', headers: { 'content-type': 'application/json' }, body, signal: AbortSignal.timeout(60_000) }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(`Gemini API: ${res.status} ${JSON.stringify(data).slice(0, 200)}`);
+    return fromGeminiResponse(data);
+  }
+
+  // ── Primary: Anthropic with retry; fallback: Gemini ──────────────────────────
+  async function callLLM(messages, systemPrompt) {
+    // Try Anthropic first (up to 4 attempts with backoff on 429/529)
+    const body    = JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 4096, system: systemPrompt, tools: TOOLS, messages });
+    const headers = { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' };
+    let lastErr;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const res  = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body, signal: AbortSignal.timeout(60_000) });
+        const data = await res.json();
+        if (res.ok) return data;
+        if ((res.status === 429 || res.status === 529) && attempt < 3) {
+          const delay = Number(res.headers.get('retry-after') || Math.pow(2, attempt + 1)) * 1000;
+          console.warn(`Anthropic ${res.status} — retry in ${delay}ms (attempt ${attempt + 1})`);
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        lastErr = new Error(`Anthropic ${res.status}: ${JSON.stringify(data).slice(0, 200)}`);
+        break;
+      } catch (e) {
+        lastErr = e;
+        if (attempt < 3) await new Promise(r => setTimeout(r, Math.pow(2, attempt + 1) * 1000));
+      }
+    }
+    // Anthropic exhausted — try Gemini
+    console.warn('Anthropic failed, falling back to Gemini:', lastErr?.message);
+    return await callGemini(messages, systemPrompt);
   }
 
   try {
     let turns = 0;
     while (submitted < TARGET && checksUsed < MAX_CHECKS && turns < 20) {
       turns++;
-      const data = await callClaude(messages, systemPrompt);
+      const data = await callLLM(messages, systemPrompt);
       if (!data) throw new Error('No response from Anthropic API');
 
       messages.push({ role: 'assistant', content: data.content });
