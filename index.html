@@ -2191,11 +2191,28 @@
 
       // Run thinking animation concurrently with the stream
       const thinkingLoop = (async () => {
+        // Phase 1: play through the personalised message sequence (~6s)
         for (const [delay, text] of thinkingMsgs) {
           if (firstDomainReceived) break;
           await wait(delay);
           if (firstDomainReceived) break;
           addMessage('thinking', '', text);
+        }
+        // Phase 2: cycle patience messages every 4s while still waiting
+        const patienceMsgs = [
+          'This can take up to 60 seconds — sitting tight…',
+          'Checking domain registries in real-time…',
+          'Avoiding names too close to existing brands…',
+          'Looking for names that are actually memorable…',
+          'Almost there — quality takes a moment…',
+          'Still scanning — most good .coms are gone fast…',
+        ];
+        let pi = 0;
+        while (!firstDomainReceived) {
+          await wait(4000);
+          if (firstDomainReceived) break;
+          addMessage('thinking', '', patienceMsgs[pi % patienceMsgs.length]);
+          pi++;
         }
       })();
 
@@ -2782,6 +2799,23 @@
       initDotCounter();
 
       let firstDomain = false;
+
+      // Keep the status message cycling so it never looks frozen
+      const regenPatienceMsgs = [
+        'Scanning real-time availability…',
+        'Checking domain registries…',
+        'Trying different creative directions…',
+        'Almost there — quality takes a moment…',
+      ];
+      let rpi = 0;
+      const regenLoop = (async () => {
+        while (!firstDomain) {
+          await wait(4000);
+          if (firstDomain) break;
+          addMessage('thinking', '', regenPatienceMsgs[rpi % regenPatienceMsgs.length]);
+          rpi++;
+        }
+      })();
       let totalFound  = 0;
       let streamError = null;
 
