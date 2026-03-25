@@ -621,9 +621,17 @@ export default async function handler(req, res) {
         if (attempt < 3) await new Promise(r => setTimeout(r, Math.pow(2, attempt + 1) * 1000));
       }
     }
-    // Anthropic exhausted — try Gemini
-    console.warn('Anthropic failed, falling back to Gemini:', lastErr?.message);
-    return await callGemini(messages, systemPrompt);
+    // Anthropic exhausted — try Gemini if key is configured
+    if (!process.env.GEMINI_API_KEY) {
+      throw lastErr || new Error('Anthropic API unavailable and no Gemini fallback configured');
+    }
+    try {
+      console.warn('Anthropic failed, falling back to Gemini:', lastErr?.message);
+      return await callGemini(messages, systemPrompt);
+    } catch (geminiErr) {
+      console.error('Gemini fallback also failed:', geminiErr.message);
+      throw lastErr || geminiErr;
+    }
   }
 
   try {
@@ -756,8 +764,14 @@ export default async function handler(req, res) {
     send({ type: 'done', count: submitted });
 
   } catch (err) {
-    console.error('suggest.js error:', err);
-    send({ type: 'error', message: 'Failed to generate suggestions. Please try again.' });
+    console.error('suggest.js error:', err.message || err);
+    const isRateLimit = /429|529|rate.limit|overload/i.test(err.message || '');
+    send({
+      type: 'error',
+      message: isRateLimit
+        ? 'The AI service is busy right now — please try again in a few seconds.'
+        : 'Failed to generate suggestions. Please try again.',
+    });
   }
 
   res.end();
