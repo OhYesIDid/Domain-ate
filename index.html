@@ -742,6 +742,107 @@
       font-weight: 700;
     }
 
+    /* ── From the Blog ───────────────────────────────────────── */
+    .blog-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 40px;
+    }
+    @media (max-width: 768px) { .blog-preview-grid { grid-template-columns: 1fr; } }
+    .blog-preview-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .blog-preview-card:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-2px);
+    }
+    .blog-preview-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: #6366f1;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .blog-preview-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+    .blog-preview-meta {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+    .blog-preview-arrow {
+      font-size: 13px;
+      color: #6366f1;
+    }
+
+    /* ── FAQ ─────────────────────────────────────────────────── */
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 40px;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .faq-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .faq-question {
+      width: 100%;
+      text-align: left;
+      padding: 18px 20px;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .faq-question:hover { color: #a78bfa; }
+    .faq-chevron {
+      font-size: 18px;
+      transition: transform 0.25s;
+      flex-shrink: 0;
+      color: var(--text-muted);
+    }
+    .faq-item.open .faq-chevron { transform: rotate(180deg); }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s;
+      padding: 0 20px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    .faq-item.open .faq-answer {
+      max-height: 300px;
+      padding: 0 20px 18px;
+    }
+
     footer {
       border-top: 1px solid var(--border);
       padding: 40px 0;
@@ -1445,7 +1546,7 @@
             >A sustainable fashion marketplace for Gen Z consumers</textarea>
             
             <button class="cta-button" onclick="startBrainstorming()">
-              Start Brainstorming
+              Find My Domain
             </button>
             <p class="cta-hint" style="margin-top: 16px;">Watch the AI think and ask questions in real-time</p>
           </div>
@@ -1480,9 +1581,9 @@
           <div class="input-wrapper" style="text-align:center;">
             <div class="auth-gate-icon">✨</div>
             <h2 class="cta-heading">Your domains are ready</h2>
-            <p class="cta-subheading" style="margin-bottom:28px;">Sign in to see your 10 personalised suggestions</p>
+            <p class="auth-gate-note" style="margin-bottom:20px;">Free &middot; 5 consultations/month &middot; No credit card needed</p>
+            <p class="cta-subheading" style="margin-bottom:28px;">Sign in to unlock your 10 personalised suggestions</p>
             <div id="clerk-auth-container"></div>
-            <p class="auth-gate-note">Free &middot; 5 consultations/month &middot; No credit card needed</p>
           </div>
         </div>
 
@@ -1510,10 +1611,10 @@
       </div>
 
       <div class="trust-signals">
-        <div class="trust-item">AI Consultant</div>
-        <div class="trust-item">Instant Results</div>
-        <div class="trust-item">Privacy Focused</div>
-        <div class="trust-item">Early Bird Perks</div>
+        <div class="trust-item">10 domains per search</div>
+        <div class="trust-item">Results in ~60 seconds</div>
+        <div class="trust-item">No data sold, ever</div>
+        <div class="trust-item">Free to start</div>
       </div>
     </div>
   </section>
@@ -1558,22 +1659,22 @@
         <div class="comparison-card bad">
           <div class="comparison-header">Search Tools</div>
           <ul class="comparison-list">
-            <li>Fill 10 fields upfront</li>
-            <li>Stare at loading spinner</li>
-            <li>Generic suggestions</li>
-            <li>No personalization</li>
-            <li>40% abandon before results</li>
+            <li>Fill out 10 fields upfront</li>
+            <li>Stare at a loading spinner</li>
+            <li>100 generic, taken suggestions</li>
+            <li>No context about your business</li>
+            <li>You do all the creative work</li>
           </ul>
         </div>
 
         <div class="comparison-card good">
-          <div class="comparison-header">AI Consultant</div>
+          <div class="comparison-header">Domain-ate</div>
           <ul class="comparison-list">
             <li>Just describe your business</li>
-            <li>Asks questions while working</li>
-            <li>Tailored to your needs</li>
-            <li>Premium experience</li>
-            <li>70% conversion rate</li>
+            <li>Asks smart questions while searching</li>
+            <li>Names tailored to your brand</li>
+            <li>Checks availability in real time</li>
+            <li>10 names you'll actually want</li>
           </ul>
         </div>
       </div>
@@ -1583,41 +1684,140 @@
   <section id="pricing">
     <div class="container">
       <div class="section-header">
-        <h2><span class="gradient-text">Early Bird</span> Pricing</h2>
-        <p>First 100 users get special access</p>
+        <h2>Simple, <span class="gradient-text">Honest</span> Pricing</h2>
+        <p>Start free. Upgrade when you're ready.</p>
       </div>
 
       <div class="comparison-grid">
         <div class="feature-card">
           <h3 style="color: #6366f1; margin-bottom: 8px;">Free</h3>
-          <p style="font-size: 32px; font-weight: 800; margin-bottom: 16px;">$0<span style="font-size: 16px; color: #94a3b8;">/month</span></p>
-          
+          <p style="font-size: 32px; font-weight: 800; margin-bottom: 4px;">$0<span style="font-size: 16px; color: #94a3b8;">/month</span></p>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">No credit card needed</p>
+
           <ul class="comparison-list" style="list-style: none;">
             <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> 5 AI consultations/month</li>
-            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Conversational flow</li>
-            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Domain availability</li>
-            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> SEO scores</li>
+            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> 10 domain suggestions per run</li>
+            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Real-time availability checks</li>
+            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Domain scores &amp; rationale</li>
+            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Alt TLD suggestions</li>
           </ul>
         </div>
 
         <div class="feature-card" style="border: 2px solid #6366f1; position: relative;">
           <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 4px 16px; border-radius: 12px; font-size: 12px; font-weight: 700;">MOST POPULAR</div>
-          
+
           <h3 style="color: #6366f1; margin-bottom: 8px;">Pro</h3>
-          <p style="font-size: 32px; font-weight: 800; margin-bottom: 16px;">$9<span style="font-size: 16px; color: #94a3b8;">/month</span></p>
-          
+          <p style="font-size: 32px; font-weight: 800; margin-bottom: 4px;">$9<span style="font-size: 16px; color: #94a3b8;">/month</span></p>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">or $79/yr — save 27%</p>
+
           <ul class="comparison-list" style="list-style: none;">
-            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Unlimited consultations</li>
             <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Everything in Free</li>
-            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Social media checks</li>
-            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Save favorites</li>
-            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Consultation history</li>
+            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Unlimited consultations</li>
+            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Social media handle checks</li>
+            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Domain history badge</li>
+            <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Save &amp; revisit past searches</li>
             <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Priority support</li>
           </ul>
 
           <p style="text-align: center; margin-top: 20px; padding: 12px; background: rgba(99, 102, 241, 0.2); border-radius: 8px; font-size: 14px;">
-            <strong>Early bird special:</strong> 6 months free!
+            <strong>Founding member offer:</strong> first 3 months free
           </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FROM THE BLOG -->
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <h2>From the <span class="gradient-text">Blog</span></h2>
+        <p>Strategy, data, and expert advice on naming your business</p>
+      </div>
+      <div class="blog-preview-grid">
+        <a href="/blog/blog-generators-vs-ai" class="blog-preview-card">
+          <span class="blog-preview-tag">AI vs Generators</span>
+          <span class="blog-preview-title">Domain Name Generators vs AI Consultants: Which Actually Works?</span>
+          <span class="blog-preview-meta">7 min read <span class="blog-preview-arrow">→</span></span>
+        </a>
+        <a href="/blog/blog-trademark-domain-names" class="blog-preview-card">
+          <span class="blog-preview-tag">Legal &amp; Risk</span>
+          <span class="blog-preview-title">Domain Trademark Mistakes That Can Kill Your Startup</span>
+          <span class="blog-preview-meta">11 min read <span class="blog-preview-arrow">→</span></span>
+        </a>
+        <a href="/blog/blog-saas-naming" class="blog-preview-card">
+          <span class="blog-preview-tag">SaaS Strategy</span>
+          <span class="blog-preview-title">How to Name a SaaS Product: A Framework That Actually Works</span>
+          <span class="blog-preview-meta">11 min read <span class="blog-preview-arrow">→</span></span>
+        </a>
+      </div>
+      <p style="text-align:center;margin-top:32px;">
+        <a href="/blog/" style="color:#6366f1;text-decoration:none;font-family:'DM Mono',monospace;font-size:13px;">View all articles →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <h2>Common <span class="gradient-text">Questions</span></h2>
+        <p>Everything you need to know before you start</p>
+      </div>
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            How is Domain-ate different from using ChatGPT?
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-answer">
+            ChatGPT can brainstorm names but can't check real-time domain availability, doesn't know which names are taken, and has no awareness of pricing or alternative TLDs. Domain-ate combines AI creativity with live availability checking, pricing data, and domain history — so every suggestion you see is actually registerable right now.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            What if I don't like the suggestions?
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-answer">
+            Hit Regenerate — the AI will start fresh and explore completely different creative directions. It never repeats the same names. Each run uses a different mix of brandable, keyword, and hybrid naming styles tailored to your business.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            What happens when my 5 free consultations run out?
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-answer">
+            You'll see an upgrade prompt. Your free allowance resets at the start of each calendar month, so you can wait or upgrade to Pro for unlimited searches. No surprise charges — you stay in control.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            Is my business description stored or shared?
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-answer">
+            Your description is used only to generate suggestions during your session. We don't sell your data, share it with third parties, or use it to train AI models. See our Privacy Policy for full details.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            Which TLDs and registrars do you support?
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-answer">
+            We check availability across .com, .io, .app, .co, .ai, .dev and more. Pricing data comes from Namecheap. You can register through any registrar you like — we show you what's available and link directly to registration.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            Can I cancel my Pro plan anytime?
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-answer">
+            Yes — cancel any time, no questions asked. You keep Pro access until the end of your billing period. There are no cancellation fees or lock-in contracts.
+          </div>
         </div>
       </div>
     </div>
@@ -1642,10 +1842,10 @@
           <div class="logo-text">Domain-ate</div>
         </div>
         </a>
-        <a href="blog/index.html">Blog</a>
-        <a href="contact.html">Contact</a>
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
+        <a href="/blog/">Blog</a>
+        <a href="/contact">Contact</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
       </div>
       <p style="text-align: center; color: #64748b; margin-top: 20px; font-size: 14px;">
         © 2026 Domain-ate. All rights reserved.
@@ -2655,6 +2855,13 @@
       const resultsEl = document.getElementById('resultsStage');
       resultsEl.classList.add('active');
       resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleFaq(btn) {
+      const item = btn.closest('.faq-item');
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
     }
 
     function resetDemo() {
