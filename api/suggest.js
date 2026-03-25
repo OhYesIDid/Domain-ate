@@ -630,7 +630,7 @@ export default async function handler(req, res) {
       return await callGemini(messages, systemPrompt);
     } catch (geminiErr) {
       console.error('Gemini fallback also failed:', geminiErr.message);
-      throw lastErr || geminiErr;
+      throw geminiErr; // surface Gemini error so the detail reaches the client
     }
   }
 
