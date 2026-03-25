@@ -520,6 +520,22 @@
     .check-status-available { color: #10b981; font-weight: 700; }
     .check-status-taken     { color: var(--text-muted); }
 
+    /* ── Skeleton card inline feed ────────────────────────────── */
+    .skeleton-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      overflow: hidden;
+      max-height: 120px;
+    }
+    .skeleton-feed .check-row {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.06);
+      font-size: 12px;
+      padding: 4px 10px;
+    }
+
     /* ── Domain dot counter ───────────────────────────────────── */
     .domain-counter {
       display: flex;
@@ -1718,8 +1734,8 @@
         dots.appendChild(d);
       }
       document.getElementById('domainsFoundCount').textContent = '0';
-      document.getElementById('checkFeed').innerHTML = '';
-      document.getElementById('checkFeed').classList.remove('visible');
+      const cf = document.getElementById('checkFeed');
+      if (cf) { cf.innerHTML = ''; cf.classList.remove('visible'); }
     }
 
     function updateDotCounter(count) {
@@ -1731,10 +1747,14 @@
     }
 
     // ── Live check feed ──────────────────────────────────────────
-    const MAX_FEED_ROWS = 5;
+    // During thinking stage: writes to #checkFeed.
+    // Once results appear: writes into #skeletonFeed inside the skeleton card.
+    const MAX_FEED_ROWS = 4;
     function addCheckRow(domain, available) {
-      const feed = document.getElementById('checkFeed');
-      feed.classList.add('visible');
+      const skeletonFeed = document.getElementById('skeletonFeed');
+      const feed = skeletonFeed || document.getElementById('checkFeed');
+      if (!feed) return;
+      if (!skeletonFeed) feed.classList.add('visible');
 
       // Fade out + remove oldest row if at limit
       if (feed.children.length >= MAX_FEED_ROWS) {
@@ -1747,7 +1767,7 @@
       row.className = 'check-row';
       row.innerHTML = `
         <span class="check-domain">${domain}</span>
-        <span class="${available ? 'check-status-available' : 'check-status-taken'}">${available ? '✓ available' : '✗'}</span>
+        <span class="${available ? 'check-status-available' : 'check-status-taken'}">${available ? '✓' : '✗'}</span>
       `;
       feed.appendChild(row);
       requestAnimationFrame(() => requestAnimationFrame(() => row.classList.add('visible')));
@@ -2445,14 +2465,7 @@
       div.className = 'domain-card domain-card-skeleton card-entering';
       div.innerHTML = `
         <div class="searching-chip"><span class="searching-chip-dot"></span>Searching…</div>
-        <div class="domain-card-header">
-          <div class="skeleton-line skeleton-domain"></div>
-          <div class="skeleton-line skeleton-score"></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
-          <div class="skeleton-line skeleton-text w-full"></div>
-          <div class="skeleton-line skeleton-text w-4-5"></div>
-        </div>
+        <div class="skeleton-feed" id="skeletonFeed"></div>
       `;
       grid.prepend(div);
       requestAnimationFrame(() => requestAnimationFrame(() => div.classList.remove('card-entering')));
