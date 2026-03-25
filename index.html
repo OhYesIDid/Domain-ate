@@ -591,6 +591,7 @@
     }
     .card-fresh .domain-card-header { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.12s both; }
     .card-fresh .domain-rationale   { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.21s both; }
+    .card-fresh .social-handle-row  { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
 
     .card-fresh .register-link,
     .card-fresh .check-link         { animation: childReveal 0.3s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
@@ -947,7 +948,40 @@
       opacity: 0.6;
       font-size: 10px;
     }
-
+    /* ── Social handle row ───────────────────────────────────────────────── */
+    .social-handle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0 2px;
+    }
+    .social-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .social-icon-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      transition: all 0.18s;
+      flex-shrink: 0;
+    }
+    .social-icon-link svg {
+      width: 14px;
+      height: 14px;
+    }
+    .social-icon-link:hover {
+      border-color: var(--border-bright);
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.04);
+    }
 
     .start-over-btn {
       width: 100%;
@@ -2290,6 +2324,21 @@
         : `<div class="alt-tld-row alt-tld-loading"><span class="alt-tld-pill placeholder"></span><span class="alt-tld-pill placeholder"></span><span class="alt-tld-pill placeholder"></span></div>`;
 
 
+      // Social handle icon links (IG / X / TikTok — no "all platforms" link)
+      const base = encodeURIComponent(s.name);
+      const socialHtml = `<div class="social-handle-row">
+        <span class="social-label">Check handles:</span>
+        <a href="https://www.instagram.com/${base}" target="_blank" rel="noopener" class="social-icon-link" title="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        </a>
+        <a href="https://x.com/${base}" target="_blank" rel="noopener" class="social-icon-link" title="X / Twitter">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.262 5.634 5.902-5.634Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a href="https://www.tiktok.com/@${base}" target="_blank" rel="noopener" class="social-icon-link" title="TikTok">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.2 8.2 0 004.79 1.53V6.75a4.85 4.85 0 01-1.02-.06z"/></svg>
+        </a>
+      </div>`;
+
       // History badge placeholder — filled async by fetchDomainHistory()
       const historyHtml = `<div class="history-badge" data-domain="${escapeHtml(fullDomain)}" data-state="loading"></div>`;
 
@@ -2302,6 +2351,7 @@
         ${renderScorePill(s, availability)}
         <div class="domain-rationale">${escapeHtml(s.rationale)}</div>
         ${historyHtml}
+        ${socialHtml}
         ${avail === true
           ? `<a class="register-link" href="${registerUrl}" target="_blank" rel="noopener">${registerLabel}</a>`
           : avail === false
