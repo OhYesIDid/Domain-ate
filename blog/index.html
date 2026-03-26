@@ -55,9 +55,17 @@
     .gradient-text { background: linear-gradient(135deg, #6366f1, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
     .blog-hero p { font-size: 16px; color: var(--text-secondary); font-family: 'DM Mono', monospace; max-width: 520px; margin: 0 auto; }
 
+    /* Category filter pills */
+    .filter-bar { padding: 0 0 40px; }
+    .filter-pills { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .filter-pill { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; padding: 8px 18px; border-radius: 100px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; }
+    .filter-pill:hover { border-color: var(--border-bright); color: var(--text-secondary); }
+    .filter-pill.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); border-color: transparent; color: white; }
+
     /* Posts grid */
     .posts-section { padding: 0 0 80px; }
     .posts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; }
+    .post-card.hidden { display: none; }
 
     .post-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 16px; text-decoration: none; color: inherit; transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s; }
     .post-card:hover { border-color: var(--border-bright); transform: translateY(-4px); box-shadow: 0 20px 50px rgba(99, 102, 241, 0.15); }
@@ -122,11 +130,24 @@
     </div>
   </section>
 
+  <div class="filter-bar">
+    <div class="container">
+      <div class="filter-pills">
+        <button class="filter-pill active" data-filter="all">All</button>
+        <button class="filter-pill" data-filter="naming">Naming Strategy</button>
+        <button class="filter-pill" data-filter="tld">TLD Guides</button>
+        <button class="filter-pill" data-filter="buying">Buying &amp; Legal</button>
+        <button class="filter-pill" data-filter="news">Industry News</button>
+        <button class="filter-pill" data-filter="tools">Tools &amp; AI</button>
+      </div>
+    </div>
+  </div>
+
   <section class="posts-section">
     <div class="container">
-      <div class="posts-grid">
+      <div class="posts-grid" id="postsGrid">
 
-        <a href="/blog/blog-domain-extension-comparison" class="post-card">
+        <a href="/blog/blog-domain-extension-comparison" class="post-card" data-category="tld">
           <span class="post-tag">TLD Guide</span>
           <h2>.com vs .io vs .ai: The Best Domain Extension for Your Startup in 2026</h2>
           <p>Y Combinator data, real cost breakdowns, and a clear decision framework — so you stop agonising and pick the right TLD for your startup.</p>
@@ -137,7 +158,7 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-icann-2026-gtld" class="post-card">
+        <a href="/blog/blog-icann-2026-gtld" class="post-card" data-category="news">
           <span class="post-tag">Industry News</span>
           <h2>ICANN's 2026 New gTLD Round: What Startup Founders Must Do Before April 30</h2>
           <p>The application window for hundreds of new top-level domains opens April 30. For most startups this is a threat, not an opportunity — here's what to do right now.</p>
@@ -148,8 +169,8 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-buy-taken-domain" class="post-card">
-          <span class="post-tag">Acquisition</span>
+        <a href="/blog/blog-buy-taken-domain" class="post-card" data-category="buying">
+          <span class="post-tag">Buying &amp; Legal</span>
           <h2>How to Buy a Domain Name That's Already Taken</h2>
           <p>The domain you want is registered. Here's how to find who owns it, research its value, negotiate without tipping your hand, and close the deal safely — or walk away smartly.</p>
           <div class="post-meta">
@@ -159,8 +180,8 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-trademark-domain-names" class="post-card">
-          <span class="post-tag">Legal & Risk</span>
+        <a href="/blog/blog-trademark-domain-names" class="post-card" data-category="buying">
+          <span class="post-tag">Buying &amp; Legal</span>
           <h2>Domain Trademark Mistakes That Can Kill Your Startup</h2>
           <p>The domain is available. The brand feels right. Then you get a cease-and-desist. A plain-language guide to trademark risk — and how to check before you register.</p>
           <div class="post-meta">
@@ -170,8 +191,8 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-saas-naming" class="post-card">
-          <span class="post-tag">SaaS Strategy</span>
+        <a href="/blog/blog-saas-naming" class="post-card" data-category="naming">
+          <span class="post-tag">Naming Strategy</span>
           <h2>How to Name a SaaS Product: A Framework That Actually Works</h2>
           <p>Five naming archetypes, six practical steps, domain-first validation, and AI tools that compress weeks of searching into under an hour.</p>
           <div class="post-meta">
@@ -181,7 +202,7 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-ai-domains" class="post-card">
+        <a href="/blog/blog-ai-domains" class="post-card" data-category="tld">
           <span class="post-tag">TLD Guide</span>
           <h2>Should You Buy a .AI Domain? The Complete 2026 Guide for Startups</h2>
           <p>Everything founders need to know — SEO impact, real costs, who should actually buy one, and how to find a great name that's still available.</p>
@@ -192,8 +213,8 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-generators-vs-ai" class="post-card">
-          <span class="post-tag">AI vs Generators</span>
+        <a href="/blog/blog-generators-vs-ai" class="post-card" data-category="tools">
+          <span class="post-tag">Tools &amp; AI</span>
           <h2>Domain Name Generators vs AI Consultants: Which Actually Works?</h2>
           <p>Traditional generators churn out lists. AI consultants understand your business. Here's what the data says about which approach actually gets you a domain you'll love.</p>
           <div class="post-meta">
@@ -203,8 +224,8 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-premium-domains" class="post-card">
-          <span class="post-tag">Investment</span>
+        <a href="/blog/blog-premium-domains" class="post-card" data-category="buying">
+          <span class="post-tag">Buying &amp; Legal</span>
           <h2>Should You Buy a Premium Domain? Cost vs Benefit Analysis</h2>
           <p>Premium domains cost thousands to millions. A practical breakdown of when they're worth it, when they're not, and what to do instead.</p>
           <div class="post-meta">
@@ -214,8 +235,8 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-domain-psychology" class="post-card">
-          <span class="post-tag">Psychology</span>
+        <a href="/blog/blog-domain-psychology" class="post-card" data-category="naming">
+          <span class="post-tag">Naming Strategy</span>
           <h2>The Psychology Behind Memorable Domain Names</h2>
           <p>Why do some domain names stick instantly while others fade within seconds? The science of sound symbolism, cognitive fluency, and what makes names unforgettable.</p>
           <div class="post-meta">
@@ -225,8 +246,8 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-startup-domain-guide" class="post-card">
-          <span class="post-tag">Startup Guide</span>
+        <a href="/blog/blog-startup-domain-guide" class="post-card" data-category="naming">
+          <span class="post-tag">Naming Strategy</span>
           <h2>How to Choose a Domain Name for Your Startup: The Complete 2026 Guide</h2>
           <p>A step-by-step framework covering every factor that matters — memorability, length, TLD, trademark safety, and how to find what's actually available.</p>
           <div class="post-meta">
@@ -236,7 +257,7 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-brandable-vs-keyword" class="post-card">
+        <a href="/blog/blog-brandable-vs-keyword" class="post-card" data-category="naming">
           <span class="post-tag">Naming Strategy</span>
           <h2>Brandable vs Keyword Domains: Which Strategy Wins in 2026?</h2>
           <p>The definitive guide to choosing between memorable brand names and SEO-friendly keyword domains. Data, examples, and decision framework included.</p>
@@ -247,7 +268,7 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-tld-comparison" class="post-card">
+        <a href="/blog/blog-tld-comparison" class="post-card" data-category="tld">
           <span class="post-tag">TLD Guide</span>
           <h2>.com vs .io vs .app: Which Domain Extension Should You Choose?</h2>
           <p>A comprehensive, data-driven comparison to help you pick the perfect TLD for your business.</p>
@@ -258,8 +279,8 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-domain-mistakes" class="post-card">
-          <span class="post-tag">Strategy</span>
+        <a href="/blog/blog-domain-mistakes" class="post-card" data-category="naming">
+          <span class="post-tag">Naming Strategy</span>
           <h2>7 Domain Name Mistakes That Cost Startups Customers</h2>
           <p>Learn from others' failures. These domain mistakes have cost companies millions in lost traffic, brand confusion, and missed opportunities.</p>
           <div class="post-meta">
@@ -269,8 +290,8 @@
           <div class="read-more">Read article</div>
         </a>
 
-        <a href="/blog/blog-trends-statistics" class="post-card">
-          <span class="post-tag">Trends & Data</span>
+        <a href="/blog/blog-trends-statistics" class="post-card" data-category="news">
+          <span class="post-tag">Industry News</span>
           <h2>Domain Name Trends and Statistics 2026</h2>
           <p>The domain landscape is evolving rapidly. Here's what the data tells us about how businesses are choosing domains in 2026.</p>
           <div class="post-meta">
@@ -311,5 +332,22 @@
       <p style="text-align: center; color: #64748b; margin-top: 20px; font-size: 14px;">© 2026 Domain-ate. All rights reserved.</p>
     </div>
   </footer>
+  <script>
+    const pills = document.querySelectorAll('.filter-pill');
+    const cards = document.querySelectorAll('.post-card');
+
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+
+        const filter = pill.dataset.filter;
+        cards.forEach(card => {
+          const match = filter === 'all' || card.dataset.category === filter;
+          card.classList.toggle('hidden', !match);
+        });
+      });
+    });
+  </script>
 </body>
 </html>
