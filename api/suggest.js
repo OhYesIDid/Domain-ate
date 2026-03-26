@@ -621,41 +621,46 @@ export default async function handler(req, res) {
     throw lastErr;
   }
 
-  // ── Primary: Anthropic with retry; fallback: Gemini ──────────────────────────
+  // ── Primary: Anthropic with retry; fallback: Gemini (rate-limit only) ────────
   async function callLLM(messages, systemPrompt) {
-    // Try Anthropic first (up to 4 attempts with backoff on 429/529)
     const body    = JSON.stringify({ model: 'claude-3-5-haiku-20241022', max_tokens: 4096, system: systemPrompt, tools: TOOLS, messages });
     const headers = { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' };
     let lastErr;
+    let rateLimited = false;
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
         const res  = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body, signal: AbortSignal.timeout(60_000) });
         const data = await res.json();
         if (res.ok) return data;
         if ((res.status === 429 || res.status === 529) && attempt < 3) {
+          rateLimited = true;
           const delay = Number(res.headers.get('retry-after') || Math.pow(2, attempt + 1)) * 1000;
           console.warn(`Anthropic ${res.status} — retry in ${delay}ms (attempt ${attempt + 1})`);
           await new Promise(r => setTimeout(r, delay));
           continue;
         }
+        // Non-retriable error (400 billing/bad-request, 401 auth, etc.) — fail immediately
         lastErr = new Error(`Anthropic ${res.status}: ${JSON.stringify(data).slice(0, 200)}`);
+        console.error('Anthropic non-retriable error:', lastErr.message);
         break;
       } catch (e) {
         lastErr = e;
+        rateLimited = true; // network/timeout — worth trying Gemini
         if (attempt < 3) await new Promise(r => setTimeout(r, Math.pow(2, attempt + 1) * 1000));
       }
     }
-    // Anthropic exhausted — try Gemini if key is configured
-    if (!process.env.GEMINI_API_KEY) {
-      throw lastErr || new Error('Anthropic API unavailable and no Gemini fallback configured');
+    // Only fall back to Gemini when Anthropic was rate-limited/overloaded/timed out
+    // (not for billing/auth errors — those won't be fixed by switching provider)
+    if (rateLimited && process.env.GEMINI_API_KEY) {
+      try {
+        console.warn('Anthropic rate-limited, falling back to Gemini:', lastErr?.message);
+        return await callGemini(messages, systemPrompt);
+      } catch (geminiErr) {
+        console.error('Gemini fallback also failed:', geminiErr.message);
+        throw geminiErr;
+      }
     }
-    try {
-      console.warn('Anthropic failed, falling back to Gemini:', lastErr?.message);
-      return await callGemini(messages, systemPrompt);
-    } catch (geminiErr) {
-      console.error('Gemini fallback also failed:', geminiErr.message);
-      throw geminiErr; // surface Gemini error so the detail reaches the client
-    }
+    throw lastErr || new Error('Anthropic API unavailable');
   }
 
   try {
