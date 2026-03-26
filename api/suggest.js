@@ -384,20 +384,29 @@ export default async function handler(req, res) {
   if (!payload)  return res.status(401).json({ error: 'Invalid or expired session. Please sign in again.' });
 
   const userId = payload.sub;
-  const plan   = payload.metadata?.plan || payload.publicMetadata?.plan || 'free';
+  // Clerk puts public_metadata in the JWT with an underscore key
+  const plan   = payload.public_metadata?.plan
+               || payload.publicMetadata?.plan
+               || payload.metadata?.plan
+               || 'free';
 
   // ── Usage check (free plan, JSON response before SSE starts) ─────────────────
   if (plan !== 'pro') {
+    let usage = 0;
     try {
-      const usage = await getUsage(userId);
-      if (usage >= FREE_LIMIT) {
-        return res.status(402).json({
-          error: `You've used all ${FREE_LIMIT} free consultations this month. Upgrade to Pro for unlimited access.`,
-          usage,
-          limit: FREE_LIMIT,
-        });
-      }
-    } catch (e) { console.warn('Usage check skipped:', e.message); }
+      usage = await getUsage(userId);
+    } catch (e) {
+      console.error('Usage check Redis error:', e.message);
+      // Fail-closed: if Redis is down we cannot verify the limit, block the request
+      return res.status(503).json({ error: 'Usage service temporarily unavailable. Please try again in a moment.' });
+    }
+    if (usage >= FREE_LIMIT) {
+      return res.status(402).json({
+        error: `You've used all ${FREE_LIMIT} free searches this month. Upgrade to Pro for unlimited access.`,
+        usage,
+        limit: FREE_LIMIT,
+      });
+    }
   }
 
   const { description, answers } = req.body;
@@ -773,7 +782,7 @@ export default async function handler(req, res) {
 
     // ── Increment usage after successful generation ────────────────────────────
     if (plan !== 'pro') {
-      incrementUsage(userId).catch(e => console.warn('Usage increment failed:', e.message));
+      incrementUsage(userId).catch(e => console.error('CRITICAL: Usage increment failed — counter not updated:', e.message));
     }
 
     send({ type: 'done', count: submitted });
