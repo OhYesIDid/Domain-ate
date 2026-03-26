@@ -615,7 +615,7 @@ export default async function handler(req, res) {
   // ── Primary: Anthropic with retry; fallback: Gemini ──────────────────────────
   async function callLLM(messages, systemPrompt) {
     // Try Anthropic first (up to 4 attempts with backoff on 429/529)
-    const body    = JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 4096, system: systemPrompt, tools: TOOLS, messages });
+    const body    = JSON.stringify({ model: 'claude-3-5-haiku-20241022', max_tokens: 4096, system: systemPrompt, tools: TOOLS, messages });
     const headers = { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' };
     let lastErr;
     for (let attempt = 0; attempt < 4; attempt++) {
