@@ -1,1 +1,12 @@
-{"version":"0.0.1","configurations":[{"name":"serve","runtimeExecutable":"node","runtimeArgs":["-e","require('http').createServer((req,res)=>{const fs=require('fs'),path=require('path');let f=path.join(process.cwd(),req.url==='/'?'/demo.html':req.url);fs.readFile(f,(e,d)=>{if(e){res.writeHead(404);res.end('Not found')}else{const ext=path.extname(f);const m={'':\"text/html\",'.html':\"text/html\",'.css':\"text/css\",'.js':\"application/javascript\",'.svg':\"image/svg+xml\"};res.writeHead(200,{'Content-Type':m[ext]||'text/plain'});res.end(d)}})}).listen(3000,()=>console.log('ready'))"],"port":3000}]}
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "serve",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "npx", "serve", "."],
+      "port": 3001,
+      "autoPort": true
+    }
+  ]
+}
