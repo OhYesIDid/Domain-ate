@@ -2356,13 +2356,15 @@
 
     // SSE-based streaming: calls onDomain for each confirmed-available domain
     // as Claude finds it. Returns total count when stream ends.
-    async function streamSuggestions(description, answersObj, token, onDomain, onSearching, onCheck) {
+    async function streamSuggestions(description, answersObj, token, onDomain, onSearching, onCheck, previousDomains = []) {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
+      const body = { description, answers: answersObj };
+      if (previousDomains.length > 0) body.previousDomains = previousDomains;
       const res = await fetch('/api/suggest', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ description, answers: answersObj }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -2784,6 +2786,9 @@
       const token       = clerk?.user ? await clerk.session.getToken() : null;
       const description = document.getElementById('businessDescription').value;
 
+      // Capture previous suggestions before clearing so the API can avoid repeating them
+      const previousDomains = lastSuggestions.map(d => d.name + d.tld);
+
       // Reset state
       lastSuggestions   = [];
       lastAvailability  = {};
@@ -2841,7 +2846,7 @@
           document.getElementById('searchingIndicator').classList.add('active');
         }, (domain, available) => {
           addCheckRow(domain, available);
-        });
+        }, previousDomains);
       } catch (err) {
         streamError = err;
       }

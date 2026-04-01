@@ -145,9 +145,13 @@ async function recordTld(tld, available, ctx = 'global') {
   }
 }
 
+// Baseline availability rates derived from real-world registration density.
+// Used when Redis hasn't accumulated enough data yet (first-run warm cache).
+const BASELINE_TLD_STATS = { '.com': 5, '.io': 18, '.app': 28, '.co': 22, '.ai': 12, '.dev': 32 };
+
 async function getTldStats(ctx = 'global') {
   const tlds = ['.com', '.io', '.app', '.co', '.ai', '.dev'];
-  const stats = {};
+  const stats = { ...BASELINE_TLD_STATS }; // start with baseline so prompt is always populated
   try {
     const rows = await Promise.all(tlds.map(async tld => {
       const k  = tld.replace(/\./g, '_');
@@ -409,10 +413,14 @@ export default async function handler(req, res) {
     }
   }
 
-  const { description, answers } = req.body;
+  const { description, answers, previousDomains } = req.body;
   if (!description || typeof description !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid description' });
   }
+  // Sanitise previousDomains: accept only an array of plain strings, max 20 entries
+  const prevDomains = Array.isArray(previousDomains)
+    ? previousDomains.filter(d => typeof d === 'string' && /^[a-z0-9.-]+$/.test(d)).slice(0, 20)
+    : [];
 
   // ── Switch to SSE ─────────────────────────────────────────────────────────────
   res.setHeader('Content-Type',  'text/event-stream');
@@ -428,11 +436,10 @@ export default async function handler(req, res) {
   // ── TLD stats for dynamic prompt (scoped to this audience+geo context) ───────
   const ctx         = `${audience}:${geo}`;
   const tldStats    = await getTldStats(ctx);
-  const tldStatsStr = Object.keys(tldStats).length >= 3
-    ? '\nLIVE AVAILABILITY DATA from recent searches:\n' +
-      Object.entries(tldStats).map(([t, r]) => `${t}: ${r}% available`).join(' | ') +
-      '\nWeight your TLD choices toward higher availability rates.\n'
-    : '';
+  const tldStatsStr =
+    '\nLIVE AVAILABILITY DATA from recent searches:\n' +
+    Object.entries(tldStats).map(([t, r]) => `${t}: ${r}% available`).join(' | ') +
+    '\nWeight your TLD choices toward higher availability rates.\n';
 
   const tldRules = {
     global:
@@ -515,6 +522,10 @@ export default async function handler(req, res) {
     `- For .com, include at least one non-dictionary element (blend, truncation, suffix like -ly/-ify/-io/-era/-ova)\n` +
     `- Freely use .io, .app, .co, .ai — these have far more availability than .com\n` +
     `- The more specific and creative the name, the more likely it is free\n\n` +
+    (prevDomains.length > 0
+      ? `ALREADY SUGGESTED (do not repeat these — explore entirely new directions)\n` +
+        prevDomains.join(', ') + '\n\n'
+      : '') +
     `WORKFLOW\n` +
     `1. Think of a strong, original name concept suited to this specific business\n` +
     `2. Call check_domain — inspect the result carefully\n` +
@@ -527,8 +538,10 @@ export default async function handler(req, res) {
   let checksUsed        = 0;
   let submitted         = 0;
   let budgetWarned      = false;
-  const seenNames       = []; // names that passed quality gate — edit-distance diversity
-  const submittedNames  = []; // names actually submitted — semantic concept dedup
+  // Pre-seed quality gate with previously suggested names so they aren't repeated
+  const prevNames       = prevDomains.map(d => d.includes('.') ? d.slice(0, d.lastIndexOf('.')) : d);
+  const seenNames       = [...prevNames]; // names that passed quality gate — edit-distance diversity
+  const submittedNames  = [...prevNames]; // names actually submitted — semantic concept dedup
 
   // ── Gemini format converters ──────────────────────────────────────────────────
 
