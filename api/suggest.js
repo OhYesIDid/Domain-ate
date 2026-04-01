@@ -623,7 +623,7 @@ export default async function handler(req, res) {
 
   // ── Primary: Anthropic with retry; fallback: Gemini (rate-limit only) ────────
   async function callLLM(messages, systemPrompt) {
-    const body    = JSON.stringify({ model: 'claude-3-5-haiku-20241022', max_tokens: 4096, system: systemPrompt, tools: TOOLS, messages });
+    const body    = JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 4096, system: systemPrompt, tools: TOOLS, messages });
     const headers = { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' };
     let lastErr;
     let rateLimited = false;
