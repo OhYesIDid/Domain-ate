@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>When to Rebrand Your Domain (And How to Do It Without Losing SEO) | Domain-ate</title>
+  <meta name="description" content="Changing your domain name doesn't have to wreck your search rankings. A practical guide to knowing when it's time to rebrand, how to migrate safely, and how to pick the right new name.">
+  <link rel="canonical" href="https://domain-ate.com/blog/blog-rebrand-domain">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://domain-ate.com/blog/blog-rebrand-domain">
+  <meta property="og:title" content="When to Rebrand Your Domain (And How to Do It Without Losing SEO)">
+  <meta property="og:description" content="Changing your domain name doesn't have to wreck your search rankings. A practical guide to knowing when it's time to rebrand, how to migrate safely, and how to pick the right new name.">
+  <meta property="og:image" content="https://domain-ate.com/logo-512.png">
+  <meta property="og:site_name" content="Domain-ate">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="When to Rebrand Your Domain (And How to Do It Without Losing SEO)">
+  <meta name="twitter:description" content="Changing your domain name doesn't have to wreck your search rankings. A practical guide to knowing when it's time to rebrand, how to migrate safely, and how to pick the right new name.">
+  <meta name="twitter:image" content="https://domain-ate.com/logo-512.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "When to Rebrand Your Domain (And How to Do It Without Losing SEO)",
+    "author": {
+      "@type": "Organization",
+      "name": "Domain-ate"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Domain-ate",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://domain-ate.com/logo-matrix-icon.svg"
+      }
+    },
+    "datePublished": "2026-04-19",
+    "dateModified": "2026-04-19"
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How long does it take to recover SEO rankings after a domain rebrand?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Most sites see a temporary dip of 10–30% in organic traffic for 2–8 weeks after a domain migration with proper 301 redirects. Full recovery typically takes 3–6 months, though well-executed migrations with strong backlink profiles can recover faster. Sites that skip 301 redirects or fail to update Google Search Console may never fully recover."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do 301 redirects pass full link equity?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Google has stated that 301 redirects pass the same link equity as a direct link. In practice, most SEOs observe a small signal loss, but it is minimal compared to the cost of not redirecting at all. Keep redirects in place permanently — removing them after a year is a common mistake that causes ranking loss."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Should I rebrand to a .com if I currently have a .io or .ai domain?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Only if you have a compelling reason — a strong .com opportunity, fundraising pressure, or a brand pivot. Migrating from .io to .com for its own sake carries migration risk with uncertain SEO upside. The better move is often to acquire the matching .com and redirect it to your existing domain while you build authority."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens to my backlinks when I change domains?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Backlinks pointing to your old domain continue to pass equity as long as 301 redirects are in place. However, over time those links become less valuable as the redirect chain adds latency. Proactively reach out to high-authority sites linking to you and ask them to update the link to your new domain — this is worth doing for your top 20–30 backlinks."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <link rel="icon" type="image/svg+xml" href="../logo-matrix-icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg-primary: #080c14; --bg-secondary: #0f1624; --accent: #6366f1; --accent-light: #a78bfa; --text-primary: #f1f5f9; --text-secondary: #cbd5e1; --text-muted: #64748b; --border: rgba(99, 102, 241, 0.15); --border-bright: rgba(99, 102, 241, 0.5); }
+    body { font-family: 'Syne', sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.8; }
+    .bg-animated { position: fixed; inset: 0; background: radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(167, 139, 250, 0.1) 0%, transparent 50%); z-index: -1; }
+    header { padding: 20px 0; position: sticky; top: 0; background: rgba(8, 12, 20, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 100; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-icon { display: grid; grid-template-columns: repeat(3, 8px); gap: 4px; width: 32px; height: 32px; }
+    .logo-dot { width: 8px; height: 8px; border-radius: 2px; background: linear-gradient(135deg, #6366f1, #8b5cf6); animation: logo-pulse 2s ease-in-out infinite; }
+    .logo-dot.center { background: linear-gradient(135deg, #ec4899, #f59e0b); }
+    @keyframes logo-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.92); } }
+    .logo-text { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a { color: var(--text-secondary); text-decoration: none; transition: color 0.3s; }
+    .nav-links a:hover { color: var(--text-primary); }
+    .article-header { max-width: 800px; margin: 60px auto 40px; text-align: center; }
+    .article-meta { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+    .article-header h1 { font-size: 48px; font-weight: 800; margin-bottom: 24px; line-height: 1.2; }
+    .article-excerpt { font-size: 20px; color: var(--text-secondary); font-family: 'DM Mono', monospace; }
+    .article-content { max-width: 800px; margin: 0 auto 80px; }
+    .article-content h2 { font-size: 32px; font-weight: 700; margin: 48px 0 24px; background: linear-gradient(135deg, #6366f1, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .article-content h3 { font-size: 24px; font-weight: 600; margin: 32px 0 16px; color: var(--text-primary); }
+    .article-content p { margin-bottom: 24px; color: var(--text-secondary); font-size: 17px; }
+    .article-content ul, .article-content ol { margin: 24px 0; padding-left: 32px; }
+    .article-content li { margin-bottom: 12px; color: var(--text-secondary); font-size: 17px; }
+    .article-content a { color: var(--accent-light); }
+    .strategy-box { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 32px; margin: 32px 0; }
+    .strategy-box h3 { color: var(--accent-light); margin-bottom: 16px; font-size: 20px; }
+    .checklist { list-style: none; padding: 0; margin: 16px 0 0; }
+    .checklist li { padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; gap: 12px; color: var(--text-secondary); font-size: 16px; }
+    .checklist li:last-child { border-bottom: none; }
+    .checklist li::before { content: '☐'; color: var(--accent); font-size: 18px; flex-shrink: 0; }
+    .example-box { background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 24px 0; }
+    .example-box p { margin-bottom: 0; }
+    .warning-box { background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 24px; margin: 24px 0; }
+    .warning-box p { margin-bottom: 0; color: var(--text-secondary); }
+    .warning-box strong { color: #fcd34d; }
+    .signal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 32px 0; }
+    .signal-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    .signal-card-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent-light); margin-bottom: 10px; }
+    .signal-card-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
+    .signal-card-desc { font-size: 14px; color: var(--text-secondary); }
+    .steps-list { counter-reset: steps; list-style: none; padding: 0; margin: 24px 0; }
+    .steps-list li { counter-increment: steps; display: flex; gap: 16px; margin-bottom: 24px; align-items: flex-start; }
+    .steps-list li::before { content: counter(steps); background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+    .step-content strong { display: block; font-size: 17px; margin-bottom: 4px; color: var(--text-primary); }
+    .step-content span { font-size: 15px; color: var(--text-secondary); font-family: 'DM Mono', monospace; }
+    .timeline-bar { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 24px 0; }
+    .timeline-row { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .timeline-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .timeline-week { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent-light); min-width: 80px; }
+    .timeline-desc { font-size: 15px; color: var(--text-secondary); }
+    .cta-box { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1)); border: 2px solid var(--border-bright); border-radius: 20px; padding: 48px; text-align: center; margin: 60px 0; }
+    .cta-box h3 { font-size: 28px; margin-bottom: 16px; }
+    .cta-box p { font-size: 16px; margin-bottom: 24px; font-family: 'DM Mono', monospace; color: var(--text-secondary); }
+    .cta-button { display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 18px; transition: transform 0.3s, box-shadow 0.3s; }
+    .cta-button:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4); }
+    .faq-section { margin: 48px 0; }
+    .faq-item { border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; background: var(--bg-secondary); }
+    .faq-item h3 { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+    .faq-item p { margin-bottom: 0; font-size: 16px; }
+    footer { border-top: 1px solid var(--border); padding: 40px 0; margin-top: 80px; }
+    .footer-content { display: flex; justify-content: center; align-items: center; gap: 32px; flex-wrap: wrap; }
+    .footer-content a { color: var(--text-muted); text-decoration: none; transition: color 0.3s; }
+    .footer-content a:hover { color: var(--text-primary); }
+    @media (max-width: 768px) { .article-header h1 { font-size: 32px; } .nav-links { display: none; } .signal-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="bg-animated"></div>
+  <header>
+    <div class="container">
+      <nav>
+        <a href="/" class="logo">
+          <div class="logo-icon">
+            <div class="logo-dot"></div><div class="logo-dot"></div><div class="logo-dot"></div>
+            <div class="logo-dot"></div><div class="logo-dot center"></div><div class="logo-dot"></div>
+            <div class="logo-dot"></div><div class="logo-dot"></div><div class="logo-dot"></div>
+          </div>
+          <div class="logo-text">Domain-ate</div>
+        </a>
+        <div class="nav-links">
+          <a href="/blog/">Blog</a>
+          <a href="/#pricing">Pricing</a>
+          <a href="/contact">Contact</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <article>
+    <div class="container">
+      <div class="article-header">
+        <div class="article-meta">Published April 19, 2026 • 12 min read</div>
+        <h1>When to Rebrand Your Domain (And How to Do It Without Losing SEO)</h1>
+        <p class="article-excerpt">Most rebrands are prompted by a pivot, a trademark threat, or growth that the original name can't contain. Here's how to know when it's time — and how to migrate without handing your search rankings to a competitor.</p>
+      </div>
+
+      <div class="article-content">
+
+        <p>The domain you registered on day one made sense then. You were moving fast, the name was available, and it got you launched. But somewhere between your first hundred customers and your first fundraise, something shifted — the name started working against you instead of for you.</p>
+
+        <p>Maybe you pivoted and the old name describes a product you no longer build. Maybe a lawyer sent a letter. Maybe you're expanding internationally and your current domain sounds like a slur in Portuguese. Whatever the trigger, you're now weighing a question that keeps founders up at night: if I change my domain, will I lose everything I've built in search?</p>
+
+        <p>The short answer is: not if you do it right. Domain migrations are one of the most misunderstood SEO operations — feared more than they deserve to be, and botched more often than they need to be. This guide covers both sides: when a rebrand is genuinely necessary and how to execute the migration so your organic traffic survives.</p>
+
+        <h2>The 5 Signals It's Time to Rebrand Your Domain</h2>
+
+        <p>Not every naming regret justifies a rebrand. The disruption is real, the cost in time is real, and the short-term SEO dip is real. Before you commit, make sure at least one of these five conditions applies.</p>
+
+        <div class="signal-grid">
+          <div class="signal-card">
+            <div class="signal-card-label">Signal 1</div>
+            <div class="signal-card-title">You've received a trademark threat</div>
+            <div class="signal-card-desc">A cease-and-desist or UDRP complaint from a trademark holder isn't a negotiating position — it's a timeline. Rebranding proactively is cheaper and faster than fighting a losing legal battle. If you've received a credible IP threat, this is the clearest signal to move.</div>
+          </div>
+          <div class="signal-card">
+            <div class="signal-card-label">Signal 2</div>
+            <div class="signal-card-title">Your name no longer matches your product</div>
+            <div class="signal-card-desc">You launched as "QuickInvoice" and now you're a full finance platform. You built "DogWalkr" and now you serve all pet services. When your name actively misleads prospects about what you do — or boxes you out of adjacent markets — it's costing you conversions every day.</div>
+          </div>
+          <div class="signal-card">
+            <div class="signal-card-label">Signal 3</div>
+            <div class="signal-card-title">Your name is creating brand confusion</div>
+            <div class="signal-card-desc">A competitor with a similar name is ranking above you. Customers keep ending up at the wrong site. Journalists misspell your name. Sales reps have to spell it out phonetically on calls. Name-confusion compounds as you grow — the longer you wait, the more expensive it gets.</div>
+          </div>
+          <div class="signal-card">
+            <div class="signal-card-label">Signal 4</div>
+            <div class="signal-card-title">You're entering new markets or raising a round</div>
+            <div class="signal-card-desc">Enterprise buyers and international markets hold names to a higher standard than early adopters. If your domain is holding you back in sales conversations — or if investors have raised it during due diligence — a pre-raise rebrand is worth considering. Many companies do this intentionally before a Series A.</div>
+          </div>
+          <div class="signal-card">
+            <div class="signal-card-label">Signal 5</div>
+            <div class="signal-card-title">Your .com equivalent is now acquirable</div>
+            <div class="signal-card-desc">You launched on .io because the .com wasn't available. Now it is — the previous owner has let it lapse, or they're willing to sell at a reasonable price. If your brand is strong enough that the .com migration would consolidate authority rather than split it, this may be worth doing.</div>
+          </div>
+        </div>
+
+        <div class="warning-box">
+          <p><strong>What doesn't justify a rebrand:</strong> aesthetic preference, a slightly better name you thought of, or pressure from one advisor who "just doesn't like" your current domain. The disruption cost of a migration is meaningful — at minimum 2–3 months of partial SEO recovery. Don't do it unless one of the signals above applies.</p>
+        </div>
+
+        <h2>What You're Actually Risking (The SEO Reality)</h2>
+
+        <p>The fear around domain migrations is partly rational and partly myth. Let's separate them.</p>
+
+        <p><strong>What's real:</strong> Google treats a domain migration as a significant change. Even with perfect 301 redirects, most sites see a temporary traffic drop of 10–30% in the first 2–8 weeks. This happens because Google needs to recrawl and reindex your new URLs, recalibrate trust signals for the new domain, and reassociate your link equity with the new address. It's a genuine disruption, not a myth.</p>
+
+        <p><strong>What's a myth:</strong> That you "lose" your SEO or your backlinks. You don't. Link equity flows through properly implemented 301 redirects. Google explicitly supports domain migrations and provides tooling in Search Console to notify them of the change. Sites that follow the migration protocol recover — typically within 3–6 months — and many end up stronger because the new brand converts better and earns links faster.</p>
+
+        <p><strong>What determines how bad the dip is:</strong> The quality of your redirect implementation (more on this below), how quickly Googlebot recrawls your pages, and whether your new domain has any pre-existing authority (positive or negative). A clean new domain with full redirects from an established old domain will recover faster than a domain you acquired second-hand with a murky history.</p>
+
+        <div class="example-box">
+          <p><strong>Real-world data point:</strong> Mailchimp's 2021 rebrand to Intuit Mailchimp involved a domain consolidation that caused a temporary ranking dip across multiple high-volume terms. Within five months the consolidated domain outperformed the split-domain structure. The disruption was real; the recovery was faster than expected because the redirect implementation was clean and the brand authority was strong.</p>
+        </div>
+
+        <h2>The Migration Framework: 8 Steps in Order</h2>
+
+        <p>The order matters here. Skipping steps or doing them out of sequence is how companies lose months of rankings. Work through this list sequentially.</p>
+
+        <ol class="steps-list">
+          <li>
+            <div class="step-content">
+              <strong>Register and prepare your new domain first</strong>
+              <span>Register the new domain, set up hosting, and get SSL certificates configured before you do anything else. Do not announce the rebrand or update any external links until your new site is live and passing basic technical checks. Staging environment first, always.</span>
+            </div>
+          </li>
+          <li>
+            <div class="step-content">
+              <strong>Audit your current site's indexed pages</strong>
+              <span>Export a full list of your indexed URLs from Google Search Console. This is your redirect map starting point. Every URL that has backlinks or organic traffic needs a 1-to-1 redirect to its equivalent on the new domain — not just the homepage.</span>
+            </div>
+          </li>
+          <li>
+            <div class="step-content">
+              <strong>Build and test the redirect map</strong>
+              <span>Map every significant old URL to a corresponding new URL. Homepage to homepage, blog posts to their new equivalents, product pages to their new equivalents. Use a spreadsheet. Test every redirect in staging before going live. A bulk redirect to the homepage from all old URLs is a common shortcut that kills rankings — avoid it.</span>
+            </div>
+          </li>
+          <li>
+            <div class="step-content">
+              <strong>Update all internal links on the new domain</strong>
+              <span>Before launch, update all internal links on your new domain to point to new URLs, not the old ones via redirect. Redirect chains (old URL → new URL → new URL) slow down Googlebot and dilute signal. Your new site should link internally to itself cleanly.</span>
+            </div>
+          </li>
+          <li>
+            <div class="step-content">
+              <strong>Launch redirects and verify with a crawl tool</strong>
+              <span>Implement all 301 redirects server-side (not via JavaScript or meta refresh). After launch, run a crawl tool like Screaming Frog or Ahrefs against your old domain to verify every URL is returning a 301, not a 302 or 404. Fix anything that's wrong before moving to the next step.</span>
+            </div>
+          </li>
+          <li>
+            <div class="step-content">
+              <strong>Submit a Change of Address in Google Search Console</strong>
+              <span>Add both the old and new domain to Search Console (verify ownership of both). Then use the Change of Address tool under Settings in the old domain's property. This is Google's official migration notification — it speeds up recrawling and reindexing significantly. Don't skip this step.</span>
+            </div>
+          </li>
+          <li>
+            <div class="step-content">
+              <strong>Update your most valuable backlinks proactively</strong>
+              <span>Run a backlink report and identify your top 20–30 links by domain authority. Email each site and ask them to update the link to your new domain. You'll get a 20–30% response rate, but those direct links (with no redirect chain) are worth the effort. Start with media mentions, directory listings, and partner sites.</span>
+            </div>
+          </li>
+          <li>
+            <div class="step-content">
+              <strong>Update all external brand mentions</strong>
+              <span>Social media profiles, App Store listings, Google Business Profile, email signatures, paid ad landing pages, newsletters, and any other place the old URL appears. These don't directly affect SEO, but they affect the user experience of anyone who finds you through a non-Google channel — and broken brand signals slow down recovery.</span>
+            </div>
+          </li>
+        </ol>
+
+        <h2>How Long Until You Recover?</h2>
+
+        <p>Here's a realistic timeline for a well-executed migration on a site with 6–12 months of existing authority:</p>
+
+        <div class="timeline-bar">
+          <div class="timeline-row">
+            <div class="timeline-week">Week 1–2</div>
+            <div class="timeline-desc">Googlebot begins recrawling old domain and following redirects. New domain URLs start appearing in index. Some ranking volatility — expect a dip.</div>
+          </div>
+          <div class="timeline-row">
+            <div class="timeline-week">Week 2–4</div>
+            <div class="timeline-desc">Most high-traffic pages re-indexed on new domain. Traffic dip is most pronounced here — typically 15–30% below pre-migration baseline. This is normal, not a sign of failure.</div>
+          </div>
+          <div class="timeline-row">
+            <div class="timeline-week">Week 4–8</div>
+            <div class="timeline-desc">Rankings begin stabilising. New domain starts accumulating direct signals (clicks, time-on-site, return visits). Proactive backlink outreach starts paying off.</div>
+          </div>
+          <div class="timeline-row">
+            <div class="timeline-week">Month 3–6</div>
+            <div class="timeline-desc">Full recovery for most sites. Sites with strong brand recognition and a clean redirect implementation often exceed pre-migration traffic — the new name converts better and earns links faster.</div>
+          </div>
+          <div class="timeline-row">
+            <div class="timeline-week">Keep redirects live permanently</div>
+            <div class="timeline-desc">Never remove 301 redirects from the old domain. Keep the old domain registered indefinitely. The cost is a few dollars per year; the cost of letting it lapse is every link you ever earned pointing to a dead URL.</div>
+          </div>
+        </div>
+
+        <div class="warning-box">
+          <p><strong>The one mistake that turns a 3-month recovery into a 12-month one:</strong> redirecting all old URLs to the new homepage instead of their true equivalents. Google treats this as a soft 404 — it signals that the old page content no longer exists, and the rankings for those pages are dropped rather than transferred. Always map old URLs to equivalent new URLs.</p>
+        </div>
+
+        <h2>Choosing Your New Domain</h2>
+
+        <p>If you're rebranding, you're choosing a name under pressure — which is actually useful. Constraint clarifies what matters. You know what the old name got wrong. You know what your product does now. You have customers whose language you can borrow. You're not brainstorming from a blank page.</p>
+
+        <p>The same criteria that make a good first domain apply to a rebrand — but with an additional filter: the new name should be clearly distinct from the old one in search. If your old domain was "getflow.io" and your new one is "flowapp.com", you'll be competing with your own redirect chain in search results for months. Enough distance between old and new brand makes the transition cleaner.</p>
+
+        <p>Specifically, look for a new domain that:</p>
+
+        <ul>
+          <li>Passes the <strong>radio test</strong> — someone who hears it can spell it correctly without seeing it written down</li>
+          <li>Has a <strong>clean history</strong> — check the domain's backlink profile and Wayback Machine archive before registering; domains with spammy previous owners inherit their penalties</li>
+          <li>Is available on <strong>.com, .io, or .ai</strong> — ideally all three, so you can consolidate rather than split traffic</li>
+          <li>Doesn't conflict with an existing trademark in your category — run a USPTO search before you fall in love with it (see our <a href="/blog/blog-trademark-domain-names">trademark guide</a> for the full process)</li>
+          <li>Gives you room to grow — if the rebrand is triggered by a product pivot, pick a name with a wider aperture than what you're building today</li>
+        </ul>
+
+        <div class="cta-box">
+          <h3>Find your new name — before the rebrand</h3>
+          <p>Describe what your business does now and Domain-ate generates available names that have already cleared domain availability checks — no manual searching required.</p>
+          <a href="https://domain-ate.com" class="cta-button">Find My New Domain — Free</a>
+        </div>
+
+        <h2>The Pre-Launch Rebrand Checklist</h2>
+
+        <p>Before you flip the switch, work through this list. Each item left unchecked is a potential traffic leak or brand inconsistency you'll be chasing for months.</p>
+
+        <div class="strategy-box">
+          <h3>Technical migration</h3>
+          <ul class="checklist">
+            <li>New domain registered, SSL certificate active, site live in staging</li>
+            <li>All old indexed URLs mapped 1-to-1 to new equivalents (no bulk homepage redirects)</li>
+            <li>All 301 redirects implemented server-side and verified with a crawl tool</li>
+            <li>All internal links on new domain updated to new URLs (no redirect chains)</li>
+            <li>New XML sitemap submitted to Google Search Console</li>
+            <li>Change of Address notification submitted in Search Console (old domain property)</li>
+            <li>Old domain kept registered and redirecting — permanently</li>
+          </ul>
+        </div>
+
+        <div class="strategy-box">
+          <h3>Brand and external presence</h3>
+          <ul class="checklist">
+            <li>Top 20–30 backlinks contacted with updated URL request</li>
+            <li>Social media profiles updated (bio links, username if possible)</li>
+            <li>Google Business Profile updated</li>
+            <li>App Store / Play Store listings updated</li>
+            <li>Email signatures and newsletter footer updated</li>
+            <li>Paid ad destination URLs updated</li>
+            <li>Any PR or media kit pages updated with new URL</li>
+            <li>Partners, affiliates, and directory listings notified</li>
+          </ul>
+        </div>
+
+        <div class="strategy-box">
+          <h3>Monitoring (set up before launch)</h3>
+          <ul class="checklist">
+            <li>Google Search Console property created for new domain</li>
+            <li>Analytics tracking confirmed on new domain</li>
+            <li>Uptime monitor on old domain (alerts if redirects break)</li>
+            <li>Rank tracking configured for target keywords on new domain</li>
+            <li>Backlink monitoring set up to catch new links still pointing to old domain</li>
+          </ul>
+        </div>
+
+        <h2>A Word on Timing</h2>
+
+        <p>If your site has seasonal traffic patterns, time the migration to land at your natural low-traffic period. A SaaS with enterprise customers doesn't want to migrate in January when procurement decisions are happening. An e-commerce site doesn't migrate in November. The dip will happen regardless of when you migrate — but a dip during your slow season hurts less than a dip during your peak.</p>
+
+        <p>Also: don't migrate during a Google core update. Google rolls out core updates roughly every 2–3 months, and rankings are volatile during those windows. If a core update is in progress, wait until it finishes before launching the migration. Separating the two signals makes it much easier to diagnose any issues that arise.</p>
+
+        <h2>Frequently Asked Questions</h2>
+
+        <div class="faq-section">
+          <div class="faq-item">
+            <h3>How long does it take to recover SEO rankings after a domain rebrand?</h3>
+            <p>Most sites see a temporary dip of 10–30% in organic traffic for 2–8 weeks after a domain migration with proper 301 redirects. Full recovery typically takes 3–6 months, though well-executed migrations with strong backlink profiles can recover faster. Sites that skip 301 redirects or fail to update Google Search Console may never fully recover.</p>
+          </div>
+          <div class="faq-item">
+            <h3>Do 301 redirects pass full link equity?</h3>
+            <p>Google has stated that 301 redirects pass the same link equity as a direct link. In practice, most SEOs observe a small signal loss, but it is minimal compared to the cost of not redirecting at all. Keep redirects in place permanently — removing them after a year is a common mistake that causes ranking loss.</p>
+          </div>
+          <div class="faq-item">
+            <h3>Should I rebrand to a .com if I currently have a .io or .ai domain?</h3>
+            <p>Only if you have a compelling reason — a strong .com opportunity, fundraising pressure, or a brand pivot. Migrating from .io to .com for its own sake carries migration risk with uncertain SEO upside. The better move is often to acquire the matching .com and redirect it to your existing domain while you build authority.</p>
+          </div>
+          <div class="faq-item">
+            <h3>What happens to my backlinks when I change domains?</h3>
+            <p>Backlinks pointing to your old domain continue to pass equity as long as 301 redirects are in place. However, over time those links become less valuable as the redirect chain adds latency. Proactively reach out to high-authority sites linking to you and ask them to update the link to your new domain — this is worth doing for your top 20–30 backlinks.</p>
+          </div>
+        </div>
+
+        <h2>The Bottom Line</h2>
+
+        <p>A domain rebrand is a significant operation — but it's a manageable one. The companies that get into trouble are the ones who either delay too long (letting a bad name accumulate more and more brand debt) or rush the migration (botching redirects and losing rankings they'll spend a year trying to recover).</p>
+
+        <p>The right sequence is: decide clearly, choose the new name carefully, build the redirect map completely, and launch cleanly. Then monitor closely for 8 weeks and fix anything that looks wrong. That's it. The SEO dip is temporary. The compounding value of a name that works for your business — one that converts, that's easy to say and spell, that doesn't limit where you can take the company — that's permanent.</p>
+
+        <p>If you're at the start of this process and still need to find the right new name, <a href="https://domain-ate.com">Domain-ate</a> was built for exactly this situation. Describe your business as it is today, and get a shortlist of available names that have already passed the domain availability check — so you're not falling in love with options you can't have.</p>
+
+      </div>
+    </div>
+  </article>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <a href="/">Home</a>
+        <a href="/blog/">Blog</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="../contact">Contact</a>
+        <a href="../privacy">Privacy</a>
+        <a href="../terms">Terms</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
