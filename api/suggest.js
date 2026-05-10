@@ -264,7 +264,24 @@ const PADDING_SUFFIXES = ['app', 'hq', 'get', 'now', 'go', 'try', 'my', 'use', '
 const PADDING_PREFIXES = ['get', 'my', 'the', 'use', 'try'];
 
 // Reject names within edit-distance 1 (single-char typos) of known brands only
-const KNOWN_BRANDS = ['stripe', 'slack', 'spotify', 'notion', 'figma', 'canva', 'shopify', 'hubspot', 'dropbox', 'airbnb', 'twitter', 'tiktok', 'google', 'amazon', 'paypal', 'square', 'twilio', 'zendesk', 'atlassian', 'github', 'gitlab', 'jira', 'trello', 'asana', 'monday', 'clickup', 'discord', 'telegram', 'whatsapp', 'reddit', 'medium', 'substack', 'webflow', 'framer', 'airtable', 'linear', 'todoist', 'intercom', 'salesforce', 'netflix', 'adobe', 'microsoft', 'facebook', 'instagram', 'linkedin', 'pinterest', 'snapchat', 'basecamp', 'mailchimp', 'sendgrid', 'klaviyo', 'mixpanel', 'amplitude', 'hotjar', 'datadog', 'cloudflare', 'vercel', 'netlify', 'heroku', 'supabase', 'firebase'];
+const KNOWN_BRANDS = [
+  // Original set
+  'stripe', 'slack', 'spotify', 'notion', 'figma', 'canva', 'shopify', 'hubspot', 'dropbox',
+  'airbnb', 'twitter', 'tiktok', 'google', 'amazon', 'paypal', 'square', 'twilio', 'zendesk',
+  'atlassian', 'github', 'gitlab', 'jira', 'trello', 'asana', 'monday', 'clickup', 'discord',
+  'telegram', 'whatsapp', 'reddit', 'medium', 'substack', 'webflow', 'framer', 'airtable',
+  'linear', 'todoist', 'intercom', 'salesforce', 'netflix', 'adobe', 'microsoft', 'facebook',
+  'instagram', 'linkedin', 'pinterest', 'snapchat', 'basecamp', 'mailchimp', 'sendgrid',
+  'klaviyo', 'mixpanel', 'amplitude', 'hotjar', 'datadog', 'cloudflare', 'vercel', 'netlify',
+  'heroku', 'supabase', 'firebase',
+  // Extended — recent tech brands
+  'perplexity', 'cursor', 'rippling', 'ramp', 'brex', 'deel', 'plaid', 'vanta', 'drata',
+  'secureframe', 'snyk', 'runway', 'midjourney', 'elevenlabs', 'synthesia', 'jasper',
+  'grammarly', 'descript', 'riverside', 'retool', 'appsmith', 'neon', 'planetscale', 'resend',
+  'loops', 'posthog', 'heap', 'fullstory', 'pendo', 'productboard', 'liveblocks', 'cohere',
+  'loom', 'dovetail', 'lattice', 'gusto', 'anthropic', 'mistral', 'turso', 'upstash', 'segment',
+  'openai', 'sentry', 'raycast', 'arc', 'codeium', 'lovable', 'replit', 'bolt', 'windsurf',
+];
 
 // Strip common branding affixes to extract the semantic root for concept-dedup
 function extractRoot(name) {
@@ -292,6 +309,15 @@ function editDist(a, b) {
   return dp[m][n];
 }
 
+function cvAlternationScore(name) {
+  const isVowel = c => /[aeiou]/i.test(c);
+  let transitions = 0;
+  for (let i = 1; i < name.length; i++) {
+    if (isVowel(name[i]) !== isVowel(name[i - 1])) transitions++;
+  }
+  return name.length > 1 ? transitions / (name.length - 1) : 0;
+}
+
 function qualityGate(domain, seenNames, submittedNames = []) {
   const dot = domain.lastIndexOf('.');
   if (dot === -1) return 'missing TLD';
@@ -302,6 +328,7 @@ function qualityGate(domain, seenNames, submittedNames = []) {
   const vowelRatio = (name.match(/[aeiou]/gi) || []).length / name.length;
   if (vowelRatio < 0.2 || vowelRatio > 0.6) return 'poor vowel ratio — likely unpronounceable';
   if (/[^aeiou]{4,}/i.test(name))           return 'consonant cluster — unpronounceable';
+  if (cvAlternationScore(name) < 0.4)        return 'poor consonant-vowel alternation — likely hard to pronounce globally';
   const suffixOffender = PADDING_SUFFIXES.find(p => name !== p && name.endsWith(p) && name.length > p.length + 2);
   if (suffixOffender) return `padding suffix detected — ends in "${suffixOffender}"`;
   const prefixOffender = PADDING_PREFIXES.find(p => name !== p && name.startsWith(p) && name.length > p.length + 3);
@@ -453,22 +480,27 @@ export default async function handler(req, res) {
     Object.entries(tldStats).map(([t, r]) => `${t}: ${r}% available`).join(' | ') +
     '\nWeight your TLD choices toward higher availability rates.\n';
 
-  const tldRules = {
-    global:
-      'Include at least 4 .com suggestions — they carry universal trust. ' +
-      'The remaining 6 can use .io, .app, .co, .ai — choose whichever best fits each name.',
-    us:
-      'Include at least 5 .com suggestions — US audiences strongly equate .com with credibility. ' +
-      'The remaining 5 can use .io, .app, or .co.',
-    europe:
-      'Include at least 3 .com suggestions for global reach. ' +
-      'You may also suggest .eu or .co.uk to signal European presence. ' +
-      'Remaining slots can use .io, .app, or .co.',
-    asia:
-      'Include at least 3 .com suggestions — still the most trusted TLD in Asia-Pacific. ' +
-      'You may also suggest .asia or .co for regional relevance. ' +
-      'Remaining slots can use .io or .app.',
-  }[geo] || 'Include at least 4 .com suggestions. Remaining can use .io, .app, .co, or .ai.';
+  // Base .com minimums by geography
+  const geoComMin = { global: 4, us: 5, europe: 3, asia: 3 }[geo] ?? 4;
+
+  // Audience modifier: Gen Z is TLD-agnostic; B2C non-tech needs more .com; B2B tech fine with .io/.ai
+  const audComDelta = { b2b: 0, b2c: 1, genz: -2, both: 0 }[audience] ?? 0;
+  const comMin = Math.max(1, Math.min(geoComMin + audComDelta, 7));
+
+  const geoExtras = {
+    europe: 'You may also suggest .eu or .co.uk to signal European presence. ',
+    asia:   'You may also suggest .asia or .co for regional relevance. ',
+  }[geo] || '';
+
+  const tldRules =
+    `Include at least ${comMin} .com suggestion${comMin !== 1 ? 's' : ''}` +
+    (audience === 'genz'
+      ? ' — Gen Z audiences are comfortable with .io and .app, so .com is a bonus not a requirement.'
+      : audience === 'b2c'
+      ? ' — consumer audiences strongly associate .com with trust and legitimacy.'
+      : ' — .com carries universal credibility.') +
+    ` ${geoExtras}` +
+    `The remaining ${10 - comMin} can use .io, .app, .co, .ai, or .dev — choose whichever best fits each name's identity.`;
 
   const audienceTone = {
     b2b:
@@ -672,7 +704,7 @@ export default async function handler(req, res) {
 
   // ── Primary: Anthropic with retry; fallback: Gemini (rate-limit only) ────────
   async function callLLM(messages, systemPrompt) {
-    const body    = JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 4096, system: systemPrompt, tools: TOOLS, messages });
+    const body    = JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 4096, temperature: 0.8, system: systemPrompt, tools: TOOLS, messages });
     const headers = { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' };
     let lastErr;
     let rateLimited = false;
