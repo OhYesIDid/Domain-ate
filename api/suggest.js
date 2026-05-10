@@ -400,9 +400,8 @@ export default async function handler(req, res) {
     try {
       usage = await getUsage(userId);
     } catch (e) {
-      console.error('Usage check Redis error:', e.message);
-      // Fail-closed: if Redis is down we cannot verify the limit, block the request
-      return res.status(503).json({ error: 'Usage service temporarily unavailable. Please try again in a moment.' });
+      console.error('Usage check Redis unavailable — failing open:', e.message);
+      // Fail-open: allow the request through rather than blocking users during outages
     }
     if (usage >= FREE_LIMIT) {
       return res.status(402).json({
