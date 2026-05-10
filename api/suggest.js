@@ -345,15 +345,20 @@ const TOOLS = [
     name: 'submit_domain',
     description:
       'Submit a confirmed-available domain as a final suggestion. ' +
-      'Only call this immediately after check_domain returns { available: true } for that exact domain.',
+      'Only call this immediately after check_domain returns { available: true } for that exact domain. ' +
+      'Confidence scale: 1–3 = available but generic or weakly connected to the business; ' +
+      '4–6 = solid name with clear connection, not uniquely ownable; ' +
+      '7–8 = strong brandable name that fits the business and would stand out in the market; ' +
+      '9–10 = exceptional — distinctive, phonetically strong, perfect fit, not embarrassing in a pitch deck. ' +
+      'Be honest — most available names score 5–7. Reserve 8+ for genuinely strong names.',
     input_schema: {
       type: 'object',
       properties: {
         name:       { type: 'string',  description: 'Domain name without TLD, lowercase' },
         tld:        { type: 'string',  description: 'TLD including dot, e.g. ".io"' },
         style:      { type: 'string',  enum: ['brandable', 'keyword', 'hybrid'] },
-        rationale:  { type: 'string',  description: 'Why this name suits this specific business (max 15 words)' },
-        confidence: { type: 'integer', minimum: 1, maximum: 10, description: 'How well this name fits the business (1=poor fit, 10=perfect)' },
+        rationale:  { type: 'string',  description: 'Why this name suits this specific business — mention the phonetic quality and concept (max 20 words)' },
+        confidence: { type: 'integer', minimum: 1, maximum: 10, description: 'Honest score for how well this name fits the business (see scale in description)' },
       },
       required: ['name', 'tld', 'style', 'rationale', 'confidence'],
     },
@@ -429,8 +434,16 @@ export default async function handler(req, res) {
   const send = data => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
   // ── Build prompt ──────────────────────────────────────────────────────────────
-  const geo      = answers?.geo      || 'global';
-  const audience = answers?.audience || 'both';
+  const geo        = answers?.geo      || 'global';
+  const audience   = answers?.audience || 'both';
+  const namingStyle = answers?.style   || null;
+
+  const namingStyleInstructions = {
+    invented:    'NAMING STYLE: The founder wants invented/coined words — prioritise brandable names with no dictionary meaning. Use cross-lingual morpheme blending and unexpected phonetic combinations. Minimise keyword/descriptive names.',
+    descriptive: 'NAMING STYLE: The founder wants descriptive names — prioritise names that clearly signal what the business does. Every name should communicate function or benefit at a glance. Bias toward keyword and hybrid styles.',
+    punchy:      'NAMING STYLE: The founder wants short and punchy names — strictly prefer 5–7 characters. Front-weight plosives (k, t, p) and front vowels (i, e) for energy. No name over 8 characters.',
+    evocative:   'NAMING STYLE: The founder wants evocative/feeling names — use metaphor, nature, emotion, and journey concepts. Names should create a mood or feeling rather than describe a product. Think Notion, Bloom, Calm, Drift.',
+  }[namingStyle] || '';
 
   // ── TLD stats for dynamic prompt (scoped to this audience+geo context) ───────
   const ctx         = `${audience}:${geo}`;
@@ -473,18 +486,24 @@ export default async function handler(req, res) {
   }[audience] || 'Tone: balance professionalism with approachability.';
 
   const systemPrompt =
-    'You are a world-class domain name consultant with 15 years of experience helping startups and businesses ' +
-    'secure memorable, brandable domain names. You understand linguistics, brand psychology, and how domain ' +
-    'choices affect conversion and recall.\n\n' +
+    'You are a world-class domain name consultant and linguist with 15 years of experience helping startups ' +
+    'secure memorable, brandable domain names. You have named companies that reached $1B+ valuations. ' +
+    'You have deep expertise in phonaesthetics, sound symbolism, and cross-lingual brand naming.\n\n' +
+    'PHONAESTHETIC PRINCIPLES — apply these to every name you generate:\n' +
+    '• Front vowels (i, e) + plosives (k, t, p): convey precision, speed, modernity — right for fintech, dev tools, analytics (e.g. Stripe, Figma, Linear)\n' +
+    '• Back vowels (o, u, a) + labials (m, b): convey warmth, scale, trust — right for enterprise, health, community (e.g. Zoom, Notion, Slack)\n' +
+    '• Sibilants (s, f, sh): convey flow and sophistication — right for SaaS, design, creative tools (e.g. Figma, Shopify)\n' +
+    '• CVCV and CVCCV phonetic structures (alternating consonant-vowel) produce the most globally pronounceable invented words — prefer these patterns (e.g. Figma, Canva, Trello, Notion)\n' +
+    '• Match the phonetic feel of each name to the emotional register the business needs\n\n' +
     'You have two tools:\n' +
     '• check_domain — verifies quality standards and real-time availability\n' +
-    '• submit_domain — records a confirmed-available domain (include an honest confidence score 1–10 for how well it fits this specific business)\n\n' +
+    '• submit_domain — records a confirmed-available domain\n\n' +
     `Your goal: submit exactly ${TARGET} confirmed-available domains.\n` +
     `Budget: at most ${MAX_CHECKS} check_domain calls — use them wisely.\n\n` +
     'CRITICAL RULES:\n' +
-    '• When a domain is TAKEN: abandon that entire concept and invent something genuinely new\n' +
-    '• Never pad, never append, never retry with a single letter changed\n' +
-    '• Never submit a name that is similar to an existing brand (Stripe, Slack, Shopify, etc.)\n' +
+    '• When a domain is TAKEN: your next attempt must use a completely different word root, metaphor, and concept — as if naming a different company entirely\n' +
+    '• Each name you try must come from a fresh creative territory — ask yourself: "Could someone who has not seen my previous attempts guess which concept I am exploring?" If yes, go elsewhere\n' +
+    '• Every name must be legally distinct — before checking, mentally compare it to Stripe, Slack, Shopify, Notion, Figma, Linear, Canva and similar brands to confirm it sounds nothing like any of them\n' +
     '• Each submission must come from a distinct creative direction — no shared concept roots\n' +
     '• The quality gate automatically rejects near-duplicates, padding prefixes/suffixes, and brand clashes';
 
@@ -505,32 +524,50 @@ export default async function handler(req, res) {
     `Target market: ${geoLabel}\n` +
     `Target audience: ${audienceLabel}\n\n` +
     `AUDIENCE TONE\n${audienceTone}\n\n` +
+    (namingStyleInstructions ? namingStyleInstructions + '\n\n' : '') +
     `TLD RULES FOR THIS MARKET\n${tldRules}\n` +
     tldStatsStr + '\n' +
     `STYLE MIX (across your ${TARGET} submissions)\n` +
     styleMix + '\n\n' +
     `NAMING REQUIREMENTS\n` +
-    `- 5–12 characters (name only, excluding TLD)\n` +
-    `- Memorable and easy to spell after hearing it once\n` +
+    `- 6–9 characters is the sweet spot (79% of funded startups land here) — 5 chars acceptable if phonetically rich, 10–12 only if exceptional\n` +
+    `- Radio test: someone hearing this name on a podcast must be able to type it correctly with no ambiguity — if two spellings of the same sound are plausible, the name fails\n` +
+    `- Phonetic fit: the sound of the name must match the emotional register of the business (precise/fast vs warm/trustworthy vs bold/irreverent)\n` +
     `- No hyphens, no numbers\n` +
-    `- Do NOT submit names similar to existing brands (Stripe, Slack, Shopify, Notion, etc.)\n` +
+    `- Every name must be legally distinct from existing brands (Stripe, Slack, Shopify, Notion, Figma, etc.)\n` +
     `- Each submission must come from a genuinely different creative concept\n\n` +
     `AVAILABILITY STRATEGY\n` +
     `Most obvious .com combinations are already registered. To find available names:\n` +
     `- Favour coined/invented words and unexpected combinations over common English word pairs\n` +
-    `- For .com, include at least one non-dictionary element (blend, truncation, suffix like -ly/-ify/-io/-era/-ova)\n` +
+    `- For .com, include at least one non-dictionary element (blend, truncation, suffix like -ly/-ify/-era/-ova)\n` +
     `- Freely use .io, .app, .co, .ai — these have far more availability than .com\n` +
-    `- The more specific and creative the name, the more likely it is free\n\n` +
+    `- The more specific and creative the name, the more likely it is free\n` +
+    `- Cross-lingual borrowing: when English is saturated, borrow from Italian (musical, flowing), Latin (authoritative), Spanish (warm), or Japanese (minimal). "Lumio" (from lumière/luce = light) when Glow and Radiance are taken. "Modo" (way/style) when Method and Style are taken. "Vela" (sail, candle) when Wave is taken.\n` +
+    `- Root blending: combine a meaningful morpheme with a phonetically pleasing suffix. "Veri-" (truth) + "-ka" = Verika. "Arc-" (journey) + "-elo" = Arcelo. Produces names that feel meaningful without being obvious.\n` +
+    `- Budget allocation: .com is ~5% available so expect to use 3–4 checks per .com attempt. .io is ~18% available, .app ~28%, .ai ~12%. Prioritise .io/.app for invented words and reserve .com checks for your strongest concepts.\n\n` +
+    `TLD SEMANTIC FIT — match TLD to business type, do not use as a generic fallback:\n` +
+    `- .ai → only for AI-native products; avoid for e-commerce, fitness, food, or non-tech businesses\n` +
+    `- .dev → developer tools and APIs specifically\n` +
+    `- .app → products with a clear UI/application (consumer or B2B)\n` +
+    `- .io → tech products broadly (SaaS, infrastructure, tools)\n` +
+    `- .co → companies and professional services\n` +
+    `- Avoid semantic overload: do not pair an obvious name with a reinforcing TLD (e.g. "aitool.ai" or "devapi.dev")\n\n` +
     (prevDomains.length > 0
       ? `ALREADY SUGGESTED (do not repeat these — explore entirely new directions)\n` +
         prevDomains.join(', ') + '\n\n'
       : '') +
+    `GOOD NAMING EXAMPLES — study these patterns before you start:\n` +
+    `• Brandable: "Clariva" (legal tech SaaS) — front vowel 'a' suggests clarity; CVCVCV pattern is globally pronounceable; 'clari-' root + '-va' Latin suffix feels premium without being generic\n` +
+    `• Hybrid: "Pathwise" (career platform) — 'path' (journey metaphor) + 'wise' (guidance); 8 chars; no padding suffix; the compound tells a story in one word\n` +
+    `• Punchy/brandable: "Zeplo" (task tool) — 5 chars; CVCCV pattern; 'z' gives energy; invented word with no baggage = blank canvas for brand-building; sounds mobile-native\n` +
+    `AVOID PATTERNS LIKE: "TaskifyPro" (padding both ends), "ClearFlow" (both words are tired/generic), "Notionly" (derivative of a known brand + weak suffix)\n\n` +
     `WORKFLOW\n` +
-    `1. Think of a strong, original name concept suited to this specific business\n` +
-    `2. Call check_domain — inspect the result carefully\n` +
-    `3. If available → immediately call submit_domain with an honest confidence score (1–10)\n` +
-    `4. If taken or rejected → invent a completely different concept, do not retry variations\n` +
-    `5. Repeat until you have submitted ${TARGET} domains`;
+    `1. Brainstorm: silently list 15 distinct creative territories for this business — different metaphors, word families, foreign language roots, abstract invented words, truncations. Ensure they are genuinely different from each other.\n` +
+    `2. Select the 10 most promising territories. For each, construct a candidate domain — apply phonaesthetic principles and the radio test before committing a check.\n` +
+    `3. Call check_domain — inspect the result carefully\n` +
+    `4. If available → immediately call submit_domain with an honest confidence score\n` +
+    `5. If taken or rejected → move to the next territory; never retry variations of a taken name\n` +
+    `6. Repeat until you have submitted ${TARGET} domains`;
 
   // ── Agentic tool-use loop ─────────────────────────────────────────────────────
   const messages        = [{ role: 'user', content: userMessage }];
