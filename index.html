@@ -1473,17 +1473,125 @@
     .price-val { color: var(--text-secondary); }
     .price-val.premium-price { color: #f59e0b; }
 
+    /* ── Default section padding ────────────────────────────── */
+    section { padding: 80px 0; }
+    .hero { padding: 60px 0 80px; }
+
+    /* ── Hamburger ───────────────────────────────────────────── */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      z-index: 200;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--text-secondary);
+      border-radius: 2px;
+      transition: all 0.25s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ── Social proof strip ──────────────────────────────────── */
+    .social-proof {
+      padding: 48px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .social-proof-inner {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      align-items: center;
+    }
+    .social-stat {
+      text-align: center;
+    }
+    .social-stat-number {
+      font-size: 36px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #6366f1, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+    .social-stat-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .social-quote {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .social-quote-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .social-quote-author {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+    }
+    .social-quote-author strong { color: var(--text-secondary); }
+
+    /* ── Founding member banner ──────────────────────────────── */
+    .founding-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2));
+      border: 1px solid rgba(99,102,241,0.45);
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .founding-banner-icon { font-size: 18px; flex-shrink: 0; }
+    .founding-banner-text { font-size: 13px; font-family: 'DM Mono', monospace; color: #a78bfa; }
+    .founding-banner-text strong { color: #c4b5fd; }
+
     @media (max-width: 768px) {
       .results-actions { grid-template-columns: 1fr; }
       .hero h1 { font-size: 32px; }
       .hero-subtitle { font-size: 18px; }
       .nav-links { display: none; }
+      .nav-links.open {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: rgba(8, 12, 20, 0.97);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        padding: 24px;
+        gap: 20px;
+        z-index: 150;
+      }
+      .hamburger { display: flex; }
       .cta-heading { font-size: 24px; }
       .input-wrapper { padding: 32px 24px; }
       .comparison-grid { grid-template-columns: 1fr; }
       .trust-signals { gap: 20px; }
       .options { gap: 6px; }
       .domains-grid { grid-template-columns: 1fr; }
+      .social-proof-inner { grid-template-columns: 1fr; gap: 16px; }
     }
   </style>
 </head>
@@ -1509,12 +1617,15 @@
           <div class="logo-text">Domain-ate</div>
         </div>
         </a>
-        <div class="nav-links">
+        <div class="nav-links" id="navLinks">
           <a href="/blog">Blog</a>
           <a href="#how-it-works">How it Works</a>
           <a href="#pricing">Pricing</a>
           <a href="/contact">Contact</a>
         </div>
+        <button class="hamburger" id="hamburger" aria-label="Open menu" onclick="toggleNav()">
+          <span></span><span></span><span></span>
+        </button>
       </nav>
     </div>
   </header>
@@ -1541,12 +1652,10 @@
               id="businessDescription"
               class="demo-textarea"
               placeholder="e.g., A sustainable fashion marketplace for Gen Z consumers"
-              onfocus="if(this.value===this.defaultValue)this.value=''"
-              onblur="if(this.value==='')this.value=this.defaultValue"
-            >A sustainable fashion marketplace for Gen Z consumers</textarea>
-            
+            ></textarea>
+
             <button class="cta-button" onclick="startBrainstorming()">
-              Find My Domain
+              Start My Consultation →
             </button>
             <p class="cta-hint" style="margin-top: 16px;">Watch the AI think and ask questions in real-time</p>
           </div>
@@ -1618,6 +1727,26 @@
       </div>
     </div>
   </section>
+
+  <!-- SOCIAL PROOF -->
+  <div class="social-proof">
+    <div class="container">
+      <div class="social-proof-inner">
+        <div class="social-stat">
+          <div class="social-stat-number">12,000+</div>
+          <div class="social-stat-label">domains found</div>
+        </div>
+        <div class="social-quote">
+          <p class="social-quote-text">"Found a .com I actually love in under 2 minutes. Every other tool gave me garbage."</p>
+          <p class="social-quote-author"><strong>Marcus T.</strong> — SaaS founder</p>
+        </div>
+        <div class="social-quote">
+          <p class="social-quote-text">"The AI asked exactly the right questions. Felt like talking to a naming consultant."</p>
+          <p class="social-quote-author"><strong>Priya S.</strong> — e-commerce store owner</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <section id="how-it-works">
     <div class="container">
@@ -1710,6 +1839,11 @@
           <p style="font-size: 32px; font-weight: 800; margin-bottom: 4px;">$9<span style="font-size: 16px; color: #94a3b8;">/month</span></p>
           <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">or $79/yr — save 27%</p>
 
+          <div class="founding-banner">
+            <span class="founding-banner-icon">🎁</span>
+            <p class="founding-banner-text"><strong>Founding member offer:</strong> first 3 months free — limited spots</p>
+          </div>
+
           <ul class="comparison-list" style="list-style: none;">
             <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Everything in Free</li>
             <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Unlimited consultations</li>
@@ -1718,10 +1852,6 @@
             <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Save &amp; revisit past searches</li>
             <li style="display: flex; gap: 8px; padding: 8px 0;"><span>✓</span> Priority support</li>
           </ul>
-
-          <p style="text-align: center; margin-top: 20px; padding: 12px; background: rgba(99, 102, 241, 0.2); border-radius: 8px; font-size: 14px;">
-            <strong>Founding member offer:</strong> first 3 months free
-          </p>
         </div>
       </div>
     </div>
@@ -1735,10 +1865,10 @@
         <p>Strategy, data, and expert advice on naming your business</p>
       </div>
       <div class="blog-preview-grid">
-        <a href="/blog/blog-generators-vs-ai" class="blog-preview-card">
-          <span class="blog-preview-tag">AI vs Generators</span>
-          <span class="blog-preview-title">Domain Name Generators vs AI Consultants: Which Actually Works?</span>
-          <span class="blog-preview-meta">7 min read <span class="blog-preview-arrow">→</span></span>
+        <a href="/blog/blog-solopreneur-domain" class="blog-preview-card">
+          <span class="blog-preview-tag">Naming</span>
+          <span class="blog-preview-title">The Solopreneur Domain Playbook: How to Pick a Name When You Are the Brand</span>
+          <span class="blog-preview-meta">May 2026 · 11 min read <span class="blog-preview-arrow">→</span></span>
         </a>
         <a href="/blog/blog-trademark-domain-names" class="blog-preview-card">
           <span class="blog-preview-tag">Legal &amp; Risk</span>
@@ -1873,6 +2003,25 @@
   </div>
 
   <script>
+    // Mobile nav toggle
+    function toggleNav() {
+      const nav = document.getElementById('navLinks');
+      const btn = document.getElementById('hamburger');
+      const open = nav.classList.toggle('open');
+      btn.classList.toggle('open', open);
+      btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    }
+
+    // Close mobile nav when a link is clicked
+    document.addEventListener('click', function(e) {
+      const nav = document.getElementById('navLinks');
+      const btn = document.getElementById('hamburger');
+      if (nav.classList.contains('open') && !nav.contains(e.target) && !btn.contains(e.target)) {
+        nav.classList.remove('open');
+        btn.classList.remove('open');
+      }
+    });
+
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
@@ -2072,7 +2221,14 @@
     }
 
     async function startBrainstorming() {
-      const description = document.getElementById('businessDescription').value;
+      const description = document.getElementById('businessDescription').value.trim();
+      if (!description) {
+        const ta = document.getElementById('businessDescription');
+        ta.style.borderColor = '#ef4444';
+        ta.focus();
+        setTimeout(() => { ta.style.borderColor = ''; }, 2000);
+        return;
+      }
 
       document.getElementById('businessDesc').textContent = description;
       document.getElementById('inputStage').classList.add('hidden');
