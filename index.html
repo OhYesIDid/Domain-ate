@@ -1473,6 +1473,124 @@
     .price-val { color: var(--text-secondary); }
     .price-val.premium-price { color: #f59e0b; }
 
+    /* ── Chat thread ─────────────────────────────────────────── */
+    .chat-thread {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding: 4px 0 8px;
+      scroll-behavior: smooth;
+    }
+    .chat-thread::-webkit-scrollbar { width: 3px; }
+    .chat-thread::-webkit-scrollbar-track { background: transparent; }
+    .chat-thread::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+    .chat-bubble {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      animation: bubbleIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes bubbleIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .chat-bubble.ai   { justify-content: flex-start; }
+    .chat-bubble.user { justify-content: flex-end; }
+
+    .chat-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      color: #fff;
+    }
+
+    .bubble-text {
+      max-width: 78%;
+      padding: 11px 15px;
+      border-radius: 18px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .chat-bubble.ai .bubble-text {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: var(--text-primary);
+    }
+    .chat-bubble.user .bubble-text {
+      background: rgba(99, 102, 241, 0.18);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-bottom-right-radius: 4px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* typing indicator inside a bubble */
+    .bubble-text.is-typing {
+      padding: 13px 18px;
+    }
+
+    /* Quick-reply chips */
+    .quick-replies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 14px 0 4px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+      animation: bubbleIn 0.25s ease both;
+    }
+    .qr-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: rgba(99, 102, 241, 0.07);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      transition: all 0.15s;
+    }
+    .qr-chip:hover {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.18);
+      transform: translateY(-1px);
+    }
+    .qr-skip {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 2px;
+      transition: color 0.2s;
+      width: 100%;
+      text-align: left;
+    }
+    .qr-skip:hover { color: var(--text-secondary); }
+
+    /* searching phase embedded in chat */
+    .chat-searching {
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      margin-top: 10px;
+    }
+
     /* ── Default section padding ────────────────────────────── */
     section { padding: 80px 0; }
     .hero { padding: 60px 0 80px; }
@@ -1663,25 +1781,26 @@
 
         <div id="thinkingStage" class="thinking-container">
           <div class="input-wrapper">
-            <div class="brief-bubble-wrap">
-              <div class="brief-bubble" id="businessDesc"></div>
+            <!-- Chat thread: AI and user bubbles appended here -->
+            <div class="chat-thread" id="chatThread"></div>
+
+            <!-- Quick-reply chips appear here during questions -->
+            <div id="quickRepliesArea"></div>
+
+            <!-- Searching phase: revealed after all questions answered -->
+            <div id="chatSearching" class="chat-searching" style="display:none;">
+              <div id="checkFeed" class="check-feed"></div>
+              <div class="domain-counter">
+                <div class="domain-dots" id="domainDots"></div>
+                <p class="domain-counter-text"><strong id="domainsFoundCount">0</strong> of 10 found</p>
+              </div>
             </div>
+          </div>
 
-            <div class="status-message" id="statusMessage">
-              <div class="status-indicator" id="statusIndicator"></div>
-              <div class="status-content" id="statusContent"></div>
-            </div>
-
-            <div id="questionContainer"></div>
-
-            <!-- Live domain check feed — visible once stream starts -->
-            <div id="checkFeed" class="check-feed"></div>
-
-            <!-- Domain counter dots -->
-            <div class="domain-counter">
-              <div class="domain-dots" id="domainDots"></div>
-              <p class="domain-counter-text"><strong id="domainsFoundCount">0</strong> of 10 found</p>
-            </div>
+          <!-- Hidden — kept so addMessage() calls in runConsultation don't crash -->
+          <div id="statusMessage" style="display:none;">
+            <div id="statusIndicator"></div>
+            <div id="statusContent"></div>
           </div>
         </div>
 
@@ -2034,10 +2153,8 @@
     });
 
     // Interactive Demo Logic
-    let currentQuestion = null;
     let answers = {};
-    let progress = 0;
-    let questionTimer = null;
+    let chatAnswerResolve = null;
     let lastSuggestions = [];
     let lastAvailability = {};
     let lastPremiumPrices = {};
@@ -2073,7 +2190,69 @@
       el.classList.add('status-visible');
     }
 
-    function updateProgress(_value) { /* replaced by dot counter */ }
+    function updateProgress(_value) { /* no-op */ }
+
+    // ── Chat helpers ─────────────────────────────────────────────
+    function chatThread() { return document.getElementById('chatThread'); }
+
+    function appendUserBubble(text) {
+      const el = document.createElement('div');
+      el.className = 'chat-bubble user';
+      el.innerHTML = `<div class="bubble-text">${text}</div>`;
+      chatThread().appendChild(el);
+      chatThread().scrollTop = chatThread().scrollHeight;
+    }
+
+    async function showTypingThenBubble(html, typingMs = 850) {
+      const thread = chatThread();
+      const wrap = document.createElement('div');
+      wrap.className = 'chat-bubble ai';
+      wrap.innerHTML = `
+        <div class="chat-avatar">✦</div>
+        <div class="bubble-text is-typing">
+          <div class="thinking-dots"><span></span><span></span><span></span></div>
+        </div>`;
+      thread.appendChild(wrap);
+      thread.scrollTop = thread.scrollHeight;
+      await wait(typingMs);
+      const bub = wrap.querySelector('.bubble-text');
+      bub.classList.remove('is-typing');
+      bub.innerHTML = html;
+      thread.scrollTop = thread.scrollHeight;
+    }
+
+    function showQuickReplies(options, skipDefault) {
+      const area = document.getElementById('quickRepliesArea');
+      const row = document.createElement('div');
+      row.className = 'quick-replies';
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'qr-chip';
+        btn.innerHTML = `<span>${opt.emoji}</span><span>${opt.label}</span>`;
+        btn.onclick = () => {
+          if (chatAnswerResolve) { chatAnswerResolve(opt); chatAnswerResolve = null; }
+        };
+        row.appendChild(btn);
+      });
+      const skip = document.createElement('button');
+      skip.className = 'qr-skip';
+      skip.textContent = 'Skip →';
+      skip.onclick = () => {
+        const def = options.find(o => o.value === skipDefault) || options[0];
+        if (chatAnswerResolve) { chatAnswerResolve(def); chatAnswerResolve = null; }
+      };
+      row.appendChild(skip);
+      area.innerHTML = '';
+      area.appendChild(row);
+    }
+
+    function hideQuickReplies() {
+      document.getElementById('quickRepliesArea').innerHTML = '';
+    }
+
+    function waitForChatAnswer() {
+      return new Promise(resolve => { chatAnswerResolve = resolve; });
+    }
 
     // ── Dot counter ─────────────────────────────────────────────
     function initDotCounter() {
@@ -2162,64 +2341,6 @@
       }, 320);
     }
 
-    function renderQuestion(question) {
-      const container = document.getElementById('questionContainer');
-      container.innerHTML = `
-        <div class="question-card">
-          <p class="question-label">Quick question</p>
-          <p class="question-text">${question.text}</p>
-          <div class="options">
-            ${question.options.map(opt => `
-              <button class="option-button" onclick="handleAnswer('${question.id}', '${opt.value}')">
-                <span class="option-emoji">${opt.emoji}</span>
-                <span class="option-label">${opt.label}</span>
-              </button>
-            `).join('')}
-          </div>
-          <div class="question-footer">
-            <button class="skip-button" onclick="handleSkip('${question.id}')">Skip →</button>
-            <div class="timer"><span id="timeLeft">${question.timeout / 1000}</span>s</div>
-          </div>
-        </div>
-      `;
-
-      let timeLeft = question.timeout / 1000;
-      if (questionTimer) clearInterval(questionTimer);
-      
-      questionTimer = setInterval(() => {
-        timeLeft -= 0.1;
-        const display = document.getElementById('timeLeft');
-        if (display) {
-          display.textContent = Math.ceil(timeLeft);
-        }
-        if (timeLeft <= 0) {
-          clearInterval(questionTimer);
-          handleSkip(question.id);
-        }
-      }, 100);
-    }
-
-    function clearQuestion() {
-      if (questionTimer) clearInterval(questionTimer);
-      document.getElementById('questionContainer').innerHTML = '';
-    }
-
-    async function handleAnswer(questionId, answer) {
-      answers[questionId] = answer;
-      clearQuestion();
-
-      if (questionId === 'geo') {
-        await continueAfterFirstQuestion(answer);
-      } else if (questionId === 'audience') {
-        await continueAfterSecondQuestion(answer);
-      }
-    }
-
-    async function handleSkip(questionId) {
-      if (!currentQuestion) return;
-      handleAnswer(questionId, currentQuestion.skipDefault);
-    }
-
     async function startBrainstorming() {
       const description = document.getElementById('businessDescription').value.trim();
       if (!description) {
@@ -2230,71 +2351,108 @@
         return;
       }
 
-      document.getElementById('businessDesc').textContent = description;
       document.getElementById('inputStage').classList.add('hidden');
       document.getElementById('thinkingStage').classList.add('active');
 
-      messages = [];
+      // Reset chat state
+      document.getElementById('chatThread').innerHTML = '';
+      document.getElementById('quickRepliesArea').innerHTML = '';
+      document.getElementById('chatSearching').style.display = 'none';
+      chatAnswerResolve = null;
       answers = {};
 
       await simulateThinkingProcess();
     }
 
     async function simulateThinkingProcess() {
-      await wait(400);
-      addMessage('thinking', '📖', 'Reading your business concept...');
-      updateProgress(15);
-      await wait(900);
-      const rawDesc = document.getElementById('businessDescription').value.trim();
-      const preview = rawDesc.length > 55 ? rawDesc.slice(0, 52) + '...' : rawDesc;
-      addMessage('thinking', '💭', `Got it — "${preview}". Two quick questions to tailor your results...`);
-      updateProgress(25);
-      await wait(500);
+      const description = document.getElementById('businessDescription').value.trim();
 
-      currentQuestion = {
-        id: 'geo',
-        text: 'Where will you primarily operate?',
-        options: [
-          { value: 'global', label: 'Global',        emoji: '🌍' },
-          { value: 'us',     label: 'United States', emoji: '🇺🇸' },
-          { value: 'europe', label: 'Europe',         emoji: '🇪🇺' },
-          { value: 'asia',   label: 'Asia Pacific',   emoji: '🌏' },
-        ],
-        timeout: 8000,
-        skipDefault: 'global',
-      };
-      renderQuestion(currentQuestion);
-    }
-
-    async function continueAfterFirstQuestion(answer) {
-      const labels = { global: 'Global', us: 'United States', europe: 'Europe', asia: 'Asia Pacific' };
-      addMessage('acknowledgment', '✓', `${labels[answer]}. One more thing...`);
-      updateProgress(38);
-      await wait(400);
-
-      currentQuestion = {
-        id: 'audience',
-        text: "Who's your main customer?",
-        options: [
-          { value: 'b2b',  label: 'Businesses (B2B)', emoji: '👔' },
-          { value: 'b2c',  label: 'Consumers (B2C)',  emoji: '👥' },
-          { value: 'genz', label: 'Gen Z / Young',    emoji: '🎯' },
-          { value: 'both', label: 'Not sure yet',     emoji: '🤷' },
-        ],
-        timeout: 6000,
-        skipDefault: 'both',
-      };
-      renderQuestion(currentQuestion);
-    }
-
-    async function continueAfterSecondQuestion(answer) {
-      const labels = { b2b: 'B2B', b2c: 'B2C', genz: 'Gen Z', both: 'mixed audience' };
-      clearQuestion();
-      addMessage('acknowledgment', '✓', `Targeting ${labels[answer]}. On it...`);
-      updateProgress(48);
+      // User's description as opening message
+      appendUserBubble(description);
       await wait(300);
 
-      // Auth check — must be logged in before we fire the API
+      // AI opening
+      await showTypingThenBubble(`Got it — I can work with that. Just two quick questions to tailor your results.`, 1000);
+      await wait(300);
+      await showTypingThenBubble(`Where will you primarily operate?`, 650);
+
+      const geoOptions = [
+        { value: 'global', label: 'Global',       emoji: '🌍' },
+        { value: 'us',     label: 'United States', emoji: '🇺🇸' },
+        { value: 'europe', label: 'Europe',        emoji: '🇪🇺' },
+        { value: 'asia',   label: 'Asia Pacific',  emoji: '🌏' },
+      ];
+      showQuickReplies(geoOptions, 'global');
+      const geo = await waitForChatAnswer();
+      hideQuickReplies();
+
+      appendUserBubble(`${geo.emoji} ${geo.label}`);
+      answers['geo'] = geo.value;
+      await wait(250);
+
+      const geoAck = {
+        global: `Global reach — I'll focus on universal names that work in any market.`,
+        us:     `US-focused — I'll prioritise strong .com names familiar to American audiences.`,
+        europe: `European market — I'll lean into names that travel well across languages.`,
+        asia:   `Asia Pacific — I'll consider shorter names and international-friendly TLDs.`,
+      };
+      await showTypingThenBubble(geoAck[geo.value] || `Got it.`, 800);
+      await wait(300);
+      await showTypingThenBubble(`And who's your main customer?`, 600);
+
+      const audienceOptions = [
+        { value: 'b2b',  label: 'Businesses (B2B)', emoji: '👔' },
+        { value: 'b2c',  label: 'Consumers (B2C)',  emoji: '👥' },
+        { value: 'genz', label: 'Gen Z / Young',    emoji: '🎯' },
+        { value: 'both', label: 'Not sure yet',     emoji: '🤷' },
+      ];
+      showQuickReplies(audienceOptions, 'both');
+      const audience = await waitForChatAnswer();
+      hideQuickReplies();
+
+      appendUserBubble(`${audience.emoji} ${audience.label}`);
+      answers['audience'] = audience.value;
+      await wait(250);
+
+      const audienceAck = {
+        b2b:  `B2B — I'll look for authoritative names that build trust with buyers.`,
+        b2c:  `B2C — I'll lean into approachable, memorable names consumers love.`,
+        genz: `Gen Z — punchy, unconventional names with real energy. My favourite kind.`,
+        both: `Versatile — I'll aim for names that work across audiences.`,
+      };
+      await showTypingThenBubble(audienceAck[audience.value] || `Got it.`, 800);
+      await wait(300);
+      await showTypingThenBubble(`Last one — what kind of name are you drawn to?`, 650);
+
+      const styleOptions = [
+        { value: 'invented', label: 'Invented word',    emoji: '🔮', hint: 'Spotify, Dropbox, Figma' },
+        { value: 'descriptive', label: 'Descriptive',   emoji: '📝', hint: 'Basecamp, Mailchimp' },
+        { value: 'punchy', label: 'Short & punchy',     emoji: '⚡', hint: 'Stripe, Slack, Arc' },
+        { value: 'evocative', label: 'Evocative / feeling', emoji: '🌱', hint: 'Notion, Bloom, Calm' },
+      ];
+      showQuickReplies(styleOptions, 'invented');
+      const style = await waitForChatAnswer();
+      hideQuickReplies();
+
+      appendUserBubble(`${style.emoji} ${style.label}`);
+      answers['style'] = style.value;
+      await wait(250);
+
+      const styleAck = {
+        invented:    `Invented words — I'll explore coined names that are ownable and distinctive.`,
+        descriptive: `Descriptive — I'll look for names that clearly signal what you do.`,
+        punchy:      `Short and punchy — I'll prioritise brevity. Under 8 characters if I can.`,
+        evocative:   `Evocative — I'll find names that create a feeling, not just describe a product.`,
+      };
+      await showTypingThenBubble(styleAck[style.value] || `Got it.`, 750);
+      await wait(350);
+      await showTypingThenBubble(`Perfect — running your search now. Checking availability in real-time…`, 700);
+
+      // Reveal the searching phase UI
+      document.getElementById('chatSearching').style.display = 'block';
+      document.getElementById('chatThread').scrollTop = document.getElementById('chatThread').scrollHeight;
+
+      // Auth check — must be logged in before firing the API
       if (!clerk || !clerk.user) {
         sessionStorage.setItem('pendingDescription', document.getElementById('businessDescription').value);
         sessionStorage.setItem('pendingAnswers', JSON.stringify(answers));
@@ -2306,11 +2464,11 @@
       await runConsultation(token);
     }
 
-    // OAuth return / auth-gate path — thin wrapper so the post-login handler
-    // can call back in without duplicating logic.
+    // OAuth return / auth-gate path
     async function fetchAndShowResults(token) {
       document.getElementById('authGate').classList.remove('active');
       document.getElementById('thinkingStage').classList.add('active');
+      document.getElementById('chatSearching').style.display = 'block';
       await runConsultation(token);
     }
 
@@ -3063,17 +3221,12 @@
       document.getElementById('resultsStage').classList.remove('active');
       document.getElementById('thinkingStage').classList.remove('active');
       document.getElementById('inputStage').classList.remove('hidden');
-      // Reset the single status message
-      const el = document.getElementById('statusMessage');
-      el.classList.remove('status-visible', 'acknowledgment');
-      document.getElementById('statusIndicator').innerHTML = '';
-      document.getElementById('statusContent').textContent = '';
-      document.getElementById('questionContainer').innerHTML = '';
+      document.getElementById('chatThread').innerHTML = '';
+      document.getElementById('quickRepliesArea').innerHTML = '';
+      document.getElementById('chatSearching').style.display = 'none';
       document.getElementById('domainsGrid').innerHTML = '';
-      updateProgress(0);
+      chatAnswerResolve = null;
       answers = {};
-      currentQuestion = null;
-      if (questionTimer) clearInterval(questionTimer);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -3173,7 +3326,6 @@
 
             if (savedDesc) {
               document.getElementById('businessDescription').value = savedDesc;
-              document.getElementById('businessDesc').textContent  = savedDesc;
             }
 
             hideAuthGate();
@@ -3195,13 +3347,15 @@
             sessionStorage.removeItem('pendingAnswers');
 
             document.getElementById('businessDescription').value = desc;
-            document.getElementById('businessDesc').textContent  = desc;
             document.getElementById('inputStage').classList.add('hidden');
             document.getElementById('thinkingStage').classList.add('active');
+            document.getElementById('chatThread').innerHTML = '';
+            document.getElementById('quickRepliesArea').innerHTML = '';
 
             if (savedAnswers) {
               answers = JSON.parse(savedAnswers);
-              addMessage('acknowledgment', '', '✨ Welcome back! Loading your results...');
+              appendUserBubble(desc);
+              await showTypingThenBubble(`Welcome back — finding your results now…`, 700);
               const token = await clerk.session.getToken();
               await fetchAndShowResults(token);
             }
