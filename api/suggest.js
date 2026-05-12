@@ -838,7 +838,7 @@ export default async function handler(req, res) {
                 tld:        String(p.block.input.tld       || '').trim(),
                 style:      ['brandable', 'keyword', 'hybrid'].includes(p.block.input.style)
                               ? p.block.input.style : 'brandable',
-                rationale:  String(p.block.input.rationale || '').trim().slice(0, 120),
+                rationale:  (() => { const r = String(p.block.input.rationale || '').trim(); if (r.length <= 160) return r; const cut = r.lastIndexOf(' ', 160); return cut > 0 ? r.slice(0, cut) : r.slice(0, 160); })(),
                 confidence: Math.min(10, Math.max(1, parseInt(p.block.input.confidence) || 7)),
               };
               submittedNames.push(domain.name);

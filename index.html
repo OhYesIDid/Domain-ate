@@ -2869,7 +2869,7 @@
             const priceStr  = t.available && t.price ? ` · ${compactPrice(t.price, userRate, userCurrency)}` : '';
             return t.available
               ? `<a href="${altUrl}" target="_blank" rel="noopener" class="${cls}">${escapeHtml(t.tld)}${priceStr}</a>`
-              : `<span class="${cls}">${escapeHtml(t.tld)}</span>`;
+              : `<span class="${cls}" title="Unavailable">${escapeHtml(t.tld)}</span>`;
           }).join('')}</div>`
         : `<div class="alt-tld-row alt-tld-loading"><span class="alt-tld-pill placeholder"></span><span class="alt-tld-pill placeholder"></span><span class="alt-tld-pill placeholder"></span></div>`;
 
@@ -2930,7 +2930,7 @@
           const priceStr  = t.available && t.price ? ` · ${compactPrice(t.price, userRate, userCurrency)}` : '';
           return t.available
             ? `<a href="${altUrl}" target="_blank" rel="noopener" class="${cls}">${escapeHtml(t.tld)}${priceStr}</a>`
-            : `<span class="${cls}">${escapeHtml(t.tld)}</span>`;
+            : `<span class="${cls}" title="Unavailable">${escapeHtml(t.tld)}</span>`;
         }).join('');
         row.classList.remove('alt-tld-loading');
       }
