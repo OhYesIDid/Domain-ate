@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Analytics — Domain-ate</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f10; color: #e4e4e7; min-height: 100vh; }
+
+    .auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .auth-box { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 40px; width: 360px; }
+    .auth-box h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 8px; }
+    .auth-box p  { color: #71717a; font-size: 0.875rem; margin-bottom: 24px; }
+    .auth-box input { width: 100%; background: #09090b; border: 1px solid #27272a; border-radius: 8px; color: #e4e4e7; padding: 10px 14px; font-size: 0.9rem; outline: none; }
+    .auth-box input:focus { border-color: #6366f1; }
+    .auth-box button { margin-top: 12px; width: 100%; background: #6366f1; color: #fff; border: none; border-radius: 8px; padding: 10px; font-size: 0.9rem; font-weight: 500; cursor: pointer; }
+    .auth-box button:hover { background: #4f46e5; }
+    .auth-error { color: #f87171; font-size: 0.8rem; margin-top: 8px; display: none; }
+
+    .app { display: none; }
+
+    header { border-bottom: 1px solid #27272a; padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 1rem; font-weight: 600; }
+    .badge  { background: #27272a; color: #a1a1aa; font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; }
+    .btn-sm { background: #27272a; color: #a1a1aa; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; margin-left: auto; }
+    .btn-sm:hover { background: #3f3f46; color: #e4e4e7; }
+
+    .toolbar { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid #27272a; }
+    .toolbar input { flex: 1; max-width: 320px; background: #18181b; border: 1px solid #27272a; border-radius: 8px; color: #e4e4e7; padding: 8px 12px; font-size: 0.85rem; outline: none; }
+    .toolbar input:focus { border-color: #6366f1; }
+    .toolbar select { background: #18181b; border: 1px solid #27272a; border-radius: 8px; color: #e4e4e7; padding: 8px 10px; font-size: 0.85rem; outline: none; cursor: pointer; }
+    .count-label { color: #71717a; font-size: 0.8rem; margin-left: auto; white-space: nowrap; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead th { text-align: left; padding: 10px 16px; color: #71717a; font-weight: 500; border-bottom: 1px solid #27272a; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #18181b; cursor: pointer; }
+    tbody tr:hover { background: #18181b; }
+    td { padding: 12px 16px; vertical-align: top; }
+    td.query { max-width: 320px; }
+    td.query span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #e4e4e7; }
+    td.user  { font-family: monospace; font-size: 0.78rem; color: #71717a; white-space: nowrap; }
+    td.time  { white-space: nowrap; color: #71717a; }
+    td.domains { }
+    .domain-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .chip { background: #1e1e2e; border: 1px solid #2d2d3d; border-radius: 4px; padding: 2px 7px; font-size: 0.75rem; color: #a5b4fc; }
+    .chip.conf-high   { border-color: #4ade80; color: #4ade80; }
+    .chip.conf-mid    { border-color: #facc15; color: #facc15; }
+    .chip.conf-low    { border-color: #71717a; color: #71717a; }
+    .chip-more { background: transparent; border-color: #27272a; color: #71717a; }
+
+    .detail-panel { display: none; background: #18181b; border-bottom: 1px solid #27272a; padding: 16px 24px; }
+    .detail-panel.open { display: block; }
+    .detail-header { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+    .detail-meta { font-size: 0.8rem; color: #71717a; }
+    .detail-meta strong { color: #a1a1aa; }
+    .detail-query { color: #e4e4e7; font-size: 0.9rem; margin-bottom: 12px; }
+    .detail-domains { display: flex; flex-direction: column; gap: 6px; }
+    .detail-domain { display: flex; align-items: baseline; gap: 10px; padding: 8px 10px; background: #09090b; border-radius: 6px; }
+    .detail-domain .dn { font-weight: 600; color: #a5b4fc; font-size: 0.9rem; min-width: 160px; }
+    .detail-domain .conf { font-size: 0.75rem; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+    .detail-domain .rationale { color: #71717a; font-size: 0.8rem; }
+
+    .pagination { display: flex; align-items: center; gap: 8px; padding: 16px 24px; border-top: 1px solid #27272a; justify-content: flex-end; }
+    .pagination button { background: #27272a; color: #a1a1aa; border: none; border-radius: 6px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; }
+    .pagination button:disabled { opacity: 0.4; cursor: default; }
+    .pagination button:not(:disabled):hover { background: #3f3f46; color: #e4e4e7; }
+    .page-info { color: #71717a; font-size: 0.8rem; }
+
+    .empty { text-align: center; padding: 64px 24px; color: #52525b; }
+    .loading { text-align: center; padding: 48px; color: #52525b; }
+    .error-bar { background: #450a0a; color: #f87171; padding: 12px 24px; font-size: 0.85rem; display: none; }
+  </style>
+</head>
+<body>
+
+<!-- Auth screen -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-box">
+    <h1>Search Analytics</h1>
+    <p>Enter your admin secret to continue.</p>
+    <input type="password" id="secretInput" placeholder="Admin secret" autocomplete="current-password">
+    <div class="auth-error" id="authError">Invalid secret — check your ADMIN_SECRET env var.</div>
+    <button id="loginBtn">Sign in</button>
+  </div>
+</div>
+
+<!-- Main app -->
+<div class="app" id="app">
+  <div class="error-bar" id="errorBar"></div>
+
+  <header>
+    <h1>Search Analytics</h1>
+    <span class="badge" id="totalBadge">—</span>
+    <button class="btn-sm" id="logoutBtn">Sign out</button>
+  </header>
+
+  <div class="toolbar">
+    <input type="search" id="filterInput" placeholder="Filter by query or user…">
+    <select id="limitSelect">
+      <option value="25">25 / page</option>
+      <option value="50" selected>50 / page</option>
+      <option value="100">100 / page</option>
+    </select>
+    <span class="count-label" id="countLabel"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Query</th>
+          <th>User</th>
+          <th>Audience / Geo</th>
+          <th>Domains found</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div class="loading" id="loadingMsg">Loading…</div>
+    <div class="empty"   id="emptyMsg"   style="display:none">No searches logged yet.</div>
+  </div>
+
+  <div class="pagination">
+    <button id="prevBtn" disabled>← Prev</button>
+    <span class="page-info" id="pageInfo"></span>
+    <button id="nextBtn" disabled>Next →</button>
+  </div>
+</div>
+
+<script>
+  const API = '/api/admin/searches';
+  let secret = '';
+  let page   = 0;
+  let limit  = 50;
+  let total  = 0;
+  let filter = '';
+  let allRows = [];
+  let openRowId = null;
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
+
+  document.getElementById('loginBtn').addEventListener('click', tryLogin);
+  document.getElementById('secretInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    secret = '';
+    sessionStorage.removeItem('admin_secret');
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('secretInput').value = '';
+    document.getElementById('authError').style.display = 'none';
+  });
+
+  async function tryLogin() {
+    const val = document.getElementById('secretInput').value.trim();
+    if (!val) return;
+    const res = await fetch(`${API}?limit=1&page=0`, { headers: { Authorization: `Bearer ${val}` } });
+    if (res.status === 401) { document.getElementById('authError').style.display = 'block'; return; }
+    secret = val;
+    sessionStorage.setItem('admin_secret', secret);
+    document.getElementById('authError').style.display = 'none';
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadPage(0);
+  }
+
+  // Auto-restore session
+  const saved = sessionStorage.getItem('admin_secret');
+  if (saved) {
+    secret = saved;
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadPage(0);
+  }
+
+  // ── Controls ──────────────────────────────────────────────────────────────
+
+  document.getElementById('filterInput').addEventListener('input', e => {
+    filter = e.target.value.toLowerCase();
+    renderRows();
+  });
+
+  document.getElementById('limitSelect').addEventListener('change', e => {
+    limit = parseInt(e.target.value, 10);
+    loadPage(0);
+  });
+
+  document.getElementById('prevBtn').addEventListener('click', () => loadPage(page - 1));
+  document.getElementById('nextBtn').addEventListener('click', () => loadPage(page + 1));
+
+  // ── Data loading ──────────────────────────────────────────────────────────
+
+  async function loadPage(p) {
+    page = p;
+    document.getElementById('loadingMsg').style.display = 'block';
+    document.getElementById('emptyMsg').style.display   = 'none';
+    document.getElementById('tableBody').innerHTML      = '';
+    document.getElementById('errorBar').style.display   = 'none';
+    openRowId = null;
+
+    try {
+      const res  = await fetch(`${API}?limit=${limit}&page=${page}`, { headers: { Authorization: `Bearer ${secret}` } });
+      if (res.status === 401) { sessionStorage.removeItem('admin_secret'); location.reload(); return; }
+      if (!res.ok) throw new Error(await res.text());
+      const data  = await res.json();
+      total       = data.total;
+      allRows     = data.searches || [];
+      document.getElementById('totalBadge').textContent = `${total.toLocaleString()} total`;
+      renderRows();
+    } catch (err) {
+      showError('Failed to load: ' + err.message);
+    } finally {
+      document.getElementById('loadingMsg').style.display = 'none';
+    }
+  }
+
+  // ── Rendering ─────────────────────────────────────────────────────────────
+
+  function renderRows() {
+    const tbody   = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    const rows = filter
+      ? allRows.filter(r => r.description?.toLowerCase().includes(filter) || r.userId?.toLowerCase().includes(filter))
+      : allRows;
+
+    if (rows.length === 0) {
+      document.getElementById('emptyMsg').style.display = 'block';
+    } else {
+      document.getElementById('emptyMsg').style.display = 'none';
+    }
+
+    rows.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.dataset.id = row.id;
+      tr.innerHTML = `
+        <td class="time">${formatTime(row.timestamp)}</td>
+        <td class="query"><span>${esc(row.description || '')}</span></td>
+        <td class="user">${esc(shortUserId(row.userId || ''))}</td>
+        <td class="user">${esc(audienceLabel(row.answers))}</td>
+        <td class="domains">${renderChips(row.domains || [])}</td>
+      `;
+      tbody.appendChild(tr);
+
+      // Detail row (hidden by default)
+      const detail = document.createElement('tr');
+      const detailTd = document.createElement('td');
+      detailTd.colSpan = 5;
+      detailTd.style.padding = 0;
+      const panel = document.createElement('div');
+      panel.className = 'detail-panel';
+      panel.id = `detail-${row.id}`;
+      panel.innerHTML = buildDetail(row);
+      detailTd.appendChild(panel);
+      detail.appendChild(detailTd);
+      tbody.appendChild(detail);
+
+      tr.addEventListener('click', () => toggleDetail(row.id));
+    });
+
+    // Pagination
+    const pageCount = Math.max(1, Math.ceil(total / limit));
+    document.getElementById('pageInfo').textContent   = `Page ${page + 1} of ${pageCount}`;
+    document.getElementById('prevBtn').disabled       = page === 0;
+    document.getElementById('nextBtn').disabled       = page >= pageCount - 1;
+    document.getElementById('countLabel').textContent = `Showing ${rows.length} of ${total}`;
+  }
+
+  function toggleDetail(id) {
+    const panel = document.getElementById(`detail-${id}`);
+    if (!panel) return;
+    if (openRowId && openRowId !== id) {
+      const prev = document.getElementById(`detail-${openRowId}`);
+      if (prev) prev.classList.remove('open');
+    }
+    panel.classList.toggle('open');
+    openRowId = panel.classList.contains('open') ? id : null;
+  }
+
+  function buildDetail(row) {
+    const ans = row.answers || {};
+    const meta = [
+      ans.geo      ? `<span class="detail-meta"><strong>Geo:</strong> ${esc(ans.geo)}</span>` : '',
+      ans.audience ? `<span class="detail-meta"><strong>Audience:</strong> ${esc(ans.audience)}</span>` : '',
+      ans.style    ? `<span class="detail-meta"><strong>Style:</strong> ${esc(ans.style)}</span>` : '',
+      `<span class="detail-meta"><strong>User:</strong> ${esc(row.userId || 'unknown')}</span>`,
+      `<span class="detail-meta"><strong>Time:</strong> ${esc(new Date(row.timestamp).toLocaleString())}</span>`,
+    ].filter(Boolean).join(' &nbsp;·&nbsp; ');
+
+    const domains = (row.domains || []).map(d => {
+      const full  = d.tld ? `${d.name}${d.tld}` : d.name;
+      const conf  = d.confidence || 0;
+      const cls   = conf >= 8 ? 'conf-high' : conf >= 5 ? 'conf-mid' : 'conf-low';
+      const label = conf ? `${conf}/10` : '';
+      return `<div class="detail-domain">
+        <span class="dn">${esc(full)}</span>
+        ${label ? `<span class="conf chip ${cls}">${label}</span>` : ''}
+        <span class="rationale">${esc(d.rationale || d.style || '')}</span>
+      </div>`;
+    }).join('');
+
+    return `
+      <div class="detail-header">${meta}</div>
+      <div class="detail-query">${esc(row.description || '')}</div>
+      <div class="detail-domains">${domains || '<span style="color:#52525b">No domains logged</span>'}</div>
+    `;
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  function renderChips(domains) {
+    if (!domains.length) return '<span style="color:#52525b">—</span>';
+    const show  = domains.slice(0, 5);
+    const extra = domains.length - show.length;
+    const chips = show.map(d => {
+      const full = d.tld ? `${d.name}${d.tld}` : d.name;
+      const conf = d.confidence || 0;
+      const cls  = conf >= 8 ? 'conf-high' : conf >= 5 ? 'conf-mid' : '';
+      return `<span class="chip ${cls}">${esc(full)}</span>`;
+    });
+    if (extra > 0) chips.push(`<span class="chip chip-more">+${extra}</span>`);
+    return `<div class="domain-chips">${chips.join('')}</div>`;
+  }
+
+  function shortUserId(id) {
+    if (!id) return '—';
+    // Clerk user IDs: user_2abc... — show last 8 chars
+    return id.length > 12 ? '…' + id.slice(-8) : id;
+  }
+
+  function audienceLabel(answers) {
+    if (!answers) return '—';
+    const parts = [];
+    if (answers.audience) parts.push(answers.audience);
+    if (answers.geo)      parts.push(answers.geo);
+    return parts.join(' / ') || '—';
+  }
+
+  function formatTime(ts) {
+    if (!ts) return '—';
+    const d    = new Date(ts);
+    const now  = Date.now();
+    const diff = now - ts;
+    if (diff < 60_000)        return 'just now';
+    if (diff < 3_600_000)     return `${Math.floor(diff / 60_000)}m ago`;
+    if (diff < 86_400_000)    return `${Math.floor(diff / 3_600_000)}h ago`;
+    if (diff < 7 * 86_400_000) return `${Math.floor(diff / 86_400_000)}d ago`;
+    return d.toLocaleDateString();
+  }
+
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function showError(msg) {
+    const bar = document.getElementById('errorBar');
+    bar.textContent = msg;
+    bar.style.display = 'block';
+  }
+</script>
+</body>
+</html>

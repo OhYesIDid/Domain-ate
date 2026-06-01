@@ -99,6 +99,30 @@ async function redisIncr(key) {
   } catch {}
 }
 
+// ── Search analytics logging ─────────────────────────────────────────────────
+// Keeps a capped sorted set of the last 500 searches (score = unix ms timestamp).
+// Each record TTL = 90 days. Fire-and-forget — never blocks the response.
+
+async function logSearch(userId, description, answers, domains) {
+  try {
+    const id        = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const timestamp = Date.now();
+    const record    = JSON.stringify({ id, userId, timestamp, description, answers: answers || {}, domains });
+    const auth      = { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` };
+    const base      = process.env.UPSTASH_REDIS_REST_URL;
+
+    await Promise.all([
+      // Store the full record with 90-day TTL
+      fetch(`${base}/set/${encodeURIComponent(`search:${id}`)}/${encodeURIComponent(record)}?EX=7776000`, { headers: auth }),
+      // Add to sorted set (score = ms timestamp for chronological order)
+      fetch(`${base}/zadd/searches:all/${timestamp}/${encodeURIComponent(id)}`, { headers: auth }),
+    ]);
+
+    // Trim to the most recent 500 entries (remove rank 0 to N-501)
+    fetch(`${base}/zremrangebyrank/searches:all/0/-501`, { headers: auth }).catch(() => {});
+  } catch {}
+}
+
 // ── Domain availability cache ─────────────────────────────────────────────────
 // Taken   → 6 months  (quality domains stay taken; non-renewals get snapped up anyway)
 // Premium → 6 months  (premium status is stable)
@@ -870,6 +894,18 @@ export default async function handler(req, res) {
     if (plan !== 'pro') {
       incrementUsage(userId).catch(e => console.error('CRITICAL: Usage increment failed — counter not updated:', e.message));
     }
+
+    // ── Log search for analytics (fire-and-forget) ────────────────────────────
+    const loggedDomains = submittedNames
+      .slice(prevNames.length) // only domains from this search, not previousDomains
+      .map(name => {
+        const found = messages
+          .flatMap(m => Array.isArray(m.content) ? m.content : [])
+          .filter(b => b.type === 'tool_use' && b.name === 'submit_domain' && b.input?.name === name)
+          .at(0);
+        return found ? { name, tld: found.input.tld, style: found.input.style, rationale: found.input.rationale, confidence: found.input.confidence } : { name };
+      });
+    logSearch(userId, description, answers, loggedDomains).catch(() => {});
 
     send({ type: 'done', count: submitted });
 
